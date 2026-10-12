@@ -1,0 +1,61 @@
+<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><meta charset="utf-8"><title>Michael's Live Scoreboard</title><style>
+body{font-family:Arial,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;padding:24px;max-width:1150px}
+h1{margin:0}.sub{color:#94a3b8;margin:4px 0 18px;display:flex;gap:12px;align-items:center}
+button{background:#fbbf24;border:0;border-radius:6px;padding:6px 14px;font-weight:bold;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card,.g{background:#1e293b;border-radius:10px;padding:14px}
+h2{margin:0;color:#fbbf24;font-size:19px}h3{font-size:13px;color:#94a3b8;margin:12px 0 4px;text-transform:uppercase}
+.row{display:flex;justify-content:space-between;padding:2px 0}.win{color:#4ade80;font-weight:bold}.meta{font-size:12px;color:#94a3b8}
+.rec{font-size:13px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.st{font-size:12px;color:#fbbf24}
+.live{border:2px solid #ef4444}.livetag{color:#ef4444;font-weight:bold;font-size:12px}.err{color:#f87171;font-size:13px}
+</style></head><body>
+<h1>🏈🏀 Michael's Live Scoreboard</h1>
+<div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
+<div class="cards" id="cards"></div>
+<h2 style="margin:22px 0 10px" id="nflh">NFL</h2><div class="grid" id="nfl"></div>
+<script>
+const B='https://site.api.espn.com/apis/site/v2/sports/';
+const TEAMS=[
+ {n:'Oklahoma Sooners Football',u:'football/college-football/teams/201/schedule'},
+ {n:'Oklahoma State Cowboys Football',u:'football/college-football/teams/197/schedule'},
+ {n:'OKC Thunder',u:'basketball/nba/teams/25/schedule',sb:'basketball/nba/scoreboard',id:'25'},
+ {n:'Oklahoma Sooners Basketball',u:'basketball/mens-college-basketball/teams/201/schedule',bb:1},
+ {n:'Oklahoma State Cowboys Basketball',u:'basketball/mens-college-basketball/teams/197/schedule',bb:1}];
+const fmt=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sc=c=>c.score==null?'':(typeof c.score=='object'?c.score.displayValue:c.score);
+const tv=c=>(c.broadcasts||[]).map(b=>b.media?.shortName||(b.names||[])[0]).filter(Boolean).join(', ');
+let anyLive=false,timer;
+async function j(u){const r=await fetch(B+u,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
+function game(e,c,label){const st=c.status.type,live=st.state==='in';if(live)anyLive=true;
+ const rows=c.competitors.map(k=>`<div class="row ${k.winner?'win':''}"><span>${esc(k.team.displayName)}${k.homeAway=='home'?' (H)':''}</span><b>${st.state=='pre'?'':esc(sc(k))}</b></div>`).join('');
+ return `<h3>${label}</h3><div class="meta">${fmt(e.date)} · ${live?'<span class=livetag>LIVE '+esc(st.shortDetail)+'</span>':esc(st.description)}${tv(c)?' · '+esc(tv(c)):''}</div>${rows}`;}
+async function team(t){
+ try{const d=await j(t.u);let ev=d.events||[];
+  // live overlay from scoreboard (schedule endpoint can lag)
+  if(t.sb){try{const s=await j(t.sb);for(const e of s.events||[]){if(e.competitions[0].competitors.some(k=>k.team.id==t.id)){const i=ev.findIndex(x=>x.id==e.id);if(i>=0)ev[i]=e;}}}catch(_){}}
+  const now=Date.now();
+  let last=null,nxt=null,cur=null;
+  for(const e of ev){const c=e.competitions[0],s=c.status.type;if(s.state==='in')cur=e;else if(s.completed)last=e;else if(!nxt)nxt=e;}
+  if(t.bb){const near=e=>e&&Math.abs(new Date(e.date)-now)<21*864e5; if(!cur&&!near(last)&&!near(nxt))return '';}
+  let h=`<div class="card ${cur?'live':''}"><h2>${t.n}</h2><div class="rec">${esc(d.requestedSeason?.displayName||'')} record: ${esc(d.team?.recordSummary||'unavailable')}</div>`;
+  if(cur)h+=game(cur,cur.competitions[0],'🔴 Now');
+  h+=last?game(last,last.competitions[0],'Last game'):'<h3>Last game</h3><i>unavailable</i>';
+  h+=nxt?game(nxt,nxt.competitions[0],'Next game'):'<h3>Next game</h3><i>unavailable</i>';
+  return h+'</div>';
+ }catch(err){return `<div class="card"><h2>${t.n}</h2><div class="err">Couldn't load (${esc(err.message)})</div></div>`;}}
+async function nfl(){const el=document.getElementById('nfl');
+ try{const d=await j('football/nfl/scoreboard');
+  document.getElementById('nflh').textContent=`NFL Week ${d.week?.number??''}`+((d.week?.teamsOnBye||[]).length?` (bye: ${d.week.teamsOnBye.map(t=>t.abbreviation).join(', ')})`:'');
+  const o={in:0,pre:1,post:2};const ev=[...d.events].sort((a,b)=>o[a.status.type.state]-o[b.status.type.state]||new Date(a.date)-new Date(b.date));
+  el.innerHTML=ev.map(e=>{const c=e.competitions[0],st=c.status.type,live=st.state=='in';if(live)anyLive=true;
+   const cs=[...c.competitors].sort(a=>a.homeAway=='home'?1:-1);
+   return `<div class="g ${live?'live':''}"><div class="meta">${fmt(e.date)}${tv(c)?' · '+esc(tv(c)):''}</div>${cs.map(k=>`<div class="row ${k.winner?'win':''}"><span>${k.homeAway=='home'?'@ ':''}${esc(k.team.abbreviation)}</span><b>${st.state=='pre'?'':esc(k.score)}</b></div>`).join('')}<div class="st">${live?'<span class=livetag>LIVE</span> '+esc(st.shortDetail):st.state=='pre'?'Kickoff '+fmt(e.date):esc(st.shortDetail)}</div></div>`}).join('')||'<i>No games</i>';
+ }catch(err){el.innerHTML=`<div class="err">Couldn't load NFL (${esc(err.message)})</div>`;}}
+async function load(){clearTimeout(timer);anyLive=false;document.getElementById('upd').textContent='Refreshing…';
+ const [c]=await Promise.all([Promise.all(TEAMS.map(team)),nfl()]);
+ document.getElementById('cards').innerHTML=c.join('');
+ document.getElementById('upd').textContent='Last updated '+new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',second:'2-digit'})+' CT · source: ESPN';
+ const ms=anyLive?30000:60000;document.getElementById('next').textContent=`Auto-refresh every ${ms/1000}s${anyLive?' (games live)':''}`;
+ timer=setTimeout(load,ms);}
+load();
+</script></body></html>
