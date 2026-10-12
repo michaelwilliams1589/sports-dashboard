@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><title>CFB Rankings</title><link rel="stylesheet" href="common.css?v=3"><style>
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#1e293b;color:#e2e8f0}.tabs button.on{background:#fbbf24;color:#0f172a}
+.rk{display:grid;grid-template-columns:34px 28px 1fr auto;gap:10px;align-items:center;background:#1e293b;border-radius:8px;padding:8px 12px;margin-bottom:6px}
+.rk img{width:28px;height:28px}.rk .n{font-weight:bold;font-size:18px;color:#fbbf24;text-align:center}.rk .r{text-align:right;font-size:13px}
+.hl{border:2px solid #fbbf24;background:#3b2f0b}.up{color:#4ade80}.dn{color:#f87171}.mine{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:800px){.mine{grid-template-columns:1fr}}</style></head><body>
+<h1>🏆 College Football Rankings</h1><div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
+<div class="mine" id="mine"></div><div class="tabs" id="tabs"></div><div class="meta" id="hd" style="margin-bottom:8px"></div><div id="list"></div>
+<script src="common.js?v=3"></script><script>
+const MY={'201':'Oklahoma','197':'Oklahoma State'};let polls=[],sel=null;
+const logo=t=>(t.logos||[])[0]?.href||t.logo||'';
+const mv=x=>{const t=x.trend||'';if(!t||t=='-'||t=='0')return '<span class=meta>–</span>';if(x.previous===0&&x.current>0)return '<span class=up>NEW</span>';return t[0]=='+'?`<span class=up>▲${t.slice(1)}</span>`:`<span class=dn>▼${t.replace('-','')}</span>`;};
+const row=(x,o)=>`<div class="rk ${MY[x.team.id]?'hl':''}"><div class=n>${o?'RV':x.current}</div><img src="${esc(logo(x.team))}" alt="" loading=lazy onerror="this.style.visibility='hidden'"><div><b>${esc(x.team.location)}</b> <span class=meta>${esc(o&&x.recordSummary=='0-0'?'':x.recordSummary||'')}</span></div><div class=r>${x.points!=null?Math.round(x.points)+' pts':''}${x.firstPlaceVotes?` <span class=meta>(${x.firstPlaceVotes})</span>`:''}<br>${o?'':mv(x)}</div></div>`;
+function render(){const p=polls.find(p=>p.type==sel)||polls[0];if(!p)return;
+ document.getElementById('tabs').innerHTML=polls.map(q=>`<button class="${q.type==p.type?'on':''}" onclick="sel='${q.type}';render()">${esc(q.shortName||q.name)}</button>`).join('');
+ document.getElementById('hd').textContent=`${p.occurrence?.displayValue||''}${p.date?' · released '+fmtD(p.date):''} · pts (1st-place votes) · movement vs previous week`;
+ document.getElementById('list').innerHTML=(p.ranks||[]).map(x=>row(x)).join('')+((p.others||[]).length?'<div class=sec>Others receiving votes</div>'+p.others.map(x=>row(x,1)).join(''):'');
+ document.getElementById('mine').innerHTML=Object.entries(MY).map(([id,nm])=>`<div class=card><h2>${nm}</h2>${polls.map(q=>{const r=(q.ranks||[]).find(x=>x.team.id==id),o=(q.others||[]).find(x=>x.team.id==id);return `<div class=row><span>${esc(q.shortName||q.name)}</span><b>${r?'#'+r.current+' '+mv(r):o?'Unranked · '+Math.round(o.points)+' votes':'Unranked'}</b></div>`}).join('')}</div>`).join('');}
+async function load(){document.getElementById('upd').textContent='Refreshing…';
+ try{const d=await j('football/college-football/rankings');polls=(d.rankings||[]).filter(r=>['ap','usa','cfp'].includes(r.type));
+  if(!polls.length)throw Error('no FBS polls listed');if(!sel)sel=polls[0].type;render();}
+ catch(err){document.getElementById('list').innerHTML=`<div class=err>Couldn't load rankings (${esc(err.message)})</div>`;}
+ document.getElementById('upd').textContent='Last updated '+stamp()+' · source: ESPN';autoRefresh(load,false);}
+load();
+</script></body></html>

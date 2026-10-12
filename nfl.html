@@ -1,7 +1,7 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><title>NFL Schedule</title><link rel="stylesheet" href="common.css"></head><body>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json"><title>NFL Schedule</title><link rel="stylesheet" href="common.css?v=3"></head><body>
 <h1>🏈 NFL Schedule</h1><div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
 <div class="sub"><select id="wk" onchange="load()"></select><span id="bye" class="meta"></span></div><div class="grid" id="nfl"></div>
-<script src="common.js"></script><script>
+<script src="common.js?v=3"></script><script>
 let inited=false;
 async function load(){document.getElementById('upd').textContent='Refreshing…';let live=false;const el=document.getElementById('nfl'),sel=document.getElementById('wk');
  try{const q=inited&&sel.value?'?'+sel.value:'';const d=await j('football/nfl/scoreboard'+q);

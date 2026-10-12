@@ -1,5 +1,5 @@
 const B='https://site.api.espn.com/apis/site/v2/sports/';
-const PAGES=[['index.html','Dashboard'],['ou-football.html','OU 🏈'],['osu-football.html','OSU 🏈'],['ou-basketball.html','OU 🏀'],['osu-basketball.html','OSU 🏀'],['thunder.html','Thunder'],['nfl.html','NFL']];
+const PAGES=[['index.html','Dashboard'],['ou-football.html','OU 🏈'],['osu-football.html','OSU 🏈'],['ou-basketball.html','OU 🏀'],['osu-basketball.html','OSU 🏀'],['thunder.html','Thunder'],['nfl.html','NFL'],['rankings.html','Rankings']];
 const fmt=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT';
 const fmtD=s=>new Date(s).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric'});
 const fmtT=s=>new Date(s).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})+' CT';
