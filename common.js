@@ -1,11 +1,15 @@
 const B='https://site.api.espn.com/apis/site/v2/sports/';
-const PAGES=[['index.html','Dashboard'],['ou-football.html','OU 🏈'],['osu-football.html','OSU 🏈'],['ou-basketball.html','OU 🏀'],['osu-basketball.html','OSU 🏀'],['thunder.html','Thunder'],['nfl.html','NFL'],['rankings.html','Rankings']];
+const PAGES=[['index.html','Home'],['calendar.html','Calendar'],['scores.html','Scores'],['ou-football.html','OU 🏈'],['osu-football.html','OSU 🏈'],['ou-basketball.html','OU 🏀'],['osu-basketball.html','OSU 🏀'],['thunder.html','Thunder'],['playoffs.html','Playoffs'],['nfl.html','NFL'],['rankings.html','Rankings'],['tech.html','Tech'],['packages.html','Packages']];
 const fmt=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT';
 const fmtD=s=>new Date(s).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric'});
 const fmtT=s=>new Date(s).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})+' CT';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sc=c=>c.score==null?'':(typeof c.score=='object'?c.score.displayValue:c.score);
 const tv=c=>[...new Set((c.broadcasts||[]).map(b=>b.media?.shortName||(b.names||[])[0]).filter(Boolean))].join(', ');
+async function jany(u){let r;try{r=await fetch(u,{cache:'no-store'});}catch(e){throw Error(navigator.onLine===false?"You're offline. Reconnect to see live data":"Can't reach the data source right now. Will retry");}if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
+const ymdCT=s=>new Date(s).toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+const todayCT=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+const fmtLong=()=>new Date().toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+' CT';
 async function j(u){let r;try{r=await fetch(B+u,{cache:'no-store'});}catch(e){throw Error(navigator.onLine===false?"You're offline. Reconnect to see live scores":"Can't reach ESPN right now. Will retry");}if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
 function nav(){const cur=location.pathname.split('/').pop()||'index.html';const n=document.createElement('nav');
  n.innerHTML=PAGES.map(([h,t])=>`<a href="${h}" class="${h==cur?'on':''}">${t}</a>`).join('');document.body.appendChild(n);}

@@ -1,12 +1,13 @@
-// Michael's Sports service worker. Bump VERSION on every release (also bump ?v=N on assets).
-const VERSION = 'v4';
+// Michael's Hub service worker. Bump VERSION on every release (also bump ?v=N on assets).
+const VERSION = 'v5';
 const CACHE = 'sports-shell-' + VERSION;
 const SHELL = [
-  './', 'index.html', 'ou-football.html', 'osu-football.html', 'ou-basketball.html',
-  'osu-basketball.html', 'thunder.html', 'nfl.html', 'rankings.html',
-  'common.css?v=4', 'common.js?v=4', 'schedule.js?v=4', 'manifest.json?v=4',
+  './', 'index.html', 'scores.html', 'calendar.html', 'playoffs.html', 'tech.html', 'packages.html',
+  'ou-football.html', 'osu-football.html', 'ou-basketball.html', 'osu-basketball.html',
+  'thunder.html', 'nfl.html', 'rankings.html',
+  'common.css?v=5', 'common.js?v=5', 'schedule.js?v=5', 'manifest.json?v=5', 'tech-watch.json?v=5',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
-  'icons/apple-touch-icon.png?v=4', 'icons/favicon-32.png?v=4', 'icons/favicon.ico?v=4'
+  'icons/apple-touch-icon.png?v=5', 'icons/favicon-32.png?v=5', 'icons/favicon.ico?v=5'
 ];
 
 self.addEventListener('install', e => {
@@ -29,7 +30,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // Only handle our own origin. ESPN (and any other cross-origin) API calls go straight to the network, never cached.
+  // Only handle our own origin. ESPN, Open-Meteo, NWS, and any other cross-origin API calls go straight to the network, never cached.
   if (url.origin !== self.location.origin) return;
   if (url.pathname.endsWith('/sw.js')) return;
 

@@ -1,7 +1,7 @@
 {
-  "name": "Michael's Sports",
-  "short_name": "Sports",
-  "description": "Live scores and schedules for OU, OSU, the Thunder and the NFL.",
+  "name": "Michael's Hub",
+  "short_name": "Hub",
+  "description": "Okmulgee weather, calendar, tech watch list, and live scores for OU, OSU, the Thunder and the NFL.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
-  "categories": ["sports"],
+  "categories": ["lifestyle", "sports"],
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
     {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},

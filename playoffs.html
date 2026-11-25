@@ -1,0 +1,134 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=5"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=5"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5"><link rel="icon" href="icons/favicon.ico?v=5"><title>OKC Thunder Playoffs</title><link rel="stylesheet" href="common.css?v=5"></head>
+<body>
+<h1>⚡ OKC Thunder Playoffs</h1>
+<div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
+<div id="status" class="status"><div class="meta">Loading standings…</div></div>
+<div id="bracket"></div>
+<h2 style="margin:18px 0 10px">Western Conference</h2>
+<div class="wrap" id="west"></div>
+<h2 style="margin:22px 0 10px">NBA standings</h2>
+<div class="wrap" id="league"></div>
+<p class="note">Standings and series from ESPN. <a href="thunder.html" style="color:#fbbf24">Thunder schedule →</a></p>
+<script src="common.js?v=5"></script><script>
+const OKC='25', STAND='https://site.api.espn.com/apis/v2/sports/basketball/nba/standings';
+const stat=(e,name)=>{for(const s of e.stats||[]) if(s.name===name||s.abbreviation===name||s.name===name) return s; return null;};
+const val=(e,name)=>{const s=stat(e,name);return s?s.displayValue:null;};
+const num=(e,name)=>{const s=stat(e,name);return s&&s.value!=null?Number(s.value):null;};
+function typList(d){return ((d.seasons||[])[0]||{}).types||[];}
+function typ(types,id){return types.find(t=>String(t.id)===String(id));}
+function inRange(t,now){return t&&now>=new Date(t.startDate)&&now<new Date(t.endDate);}
+function phase(d){
+  const types=typList(d), now=Date.now();
+  if(inRange(typ(types,3),now)) return {name:'post',label:'Playoffs',t:typ(types,3),types};
+  if(inRange(typ(types,5),now)) return {name:'playin',label:'Play-in',t:typ(types,5),types};
+  if(inRange(typ(types,2),now)) return {name:'regular',label:'Regular season',t:typ(types,2),types};
+  if(inRange(typ(types,1),now)) return {name:'pre',label:'Preseason',t:typ(types,1),types};
+  return {name:'off',label:'Offseason',t:typ(types,4),types};
+}
+function fmtDateShort(iso){if(!iso)return '';return new Date(iso).toLocaleDateString('en-US',{timeZone:'America/Chicago',month:'long',day:'numeric',year:'numeric'});}
+function confEntries(d,which){
+  const ch=(d.children||[]).find(c=>(c.name||'').includes(which)||(c.abbreviation||'').includes(which==='West'?'West':'East'));
+  return ((ch&&ch.standings&&ch.standings.entries)||[]).slice().sort((a,b)=>(num(a,'playoffSeed')??99)-(num(b,'playoffSeed')??99));
+}
+function allEntries(d){
+  const all=[];
+  for(const c of d.children||[]) for(const e of (c.standings&&c.standings.entries)||[]) all.push({conf:c.name,e});
+  all.sort((a,b)=>(num(b.e,'winPercent')??0)-(num(a.e,'winPercent')??0)||(num(b.e,'wins')??0)-(num(a.e,'wins')??0));
+  return all;
+}
+function table(rows, opts={}){
+  const showConf=!!opts.conf;
+  const head=`<thead><tr><th>#</th><th>Team</th>${showConf?'<th>Conf</th>':''}<th>W-L</th><th>PCT</th><th>GB</th><th>L10</th><th>Strk</th></tr></thead>`;
+  const body=rows.map((row,i)=>{
+    const e=row.e||row, seed=val(e,'playoffSeed')|| (i+1);
+    const t=e.team||{}, is=t.id==OKC;
+    const cut=(!showConf && (seed==6||seed==10))?'cut':'';
+    const abbr=esc(t.abbreviation||''), name=esc(t.displayName||'');
+    return `<tr class="${is?'okc':''} ${cut}"><td>${esc(seed)}</td><td><b>${abbr}</b> ${name}${is?' · OKC':''}</td>${showConf?`<td class=meta>${esc((row.conf||'').replace(' Conference',''))}</td>`:''}<td>${esc(val(e,'overall')||'—')}</td><td>${esc(val(e,'winPercent')||'—')}</td><td>${esc(val(e,'gamesBehind')||'—')}</td><td>${esc(val(e,'Last Ten Games')||'—')}</td><td>${esc(val(e,'streak')||'—')}</td></tr>`;
+  }).join('');
+  return `<table class="stbl">${head}<tbody>${body}</tbody></table>`;
+}
+function thunderStatus(west, ph, seasonName){
+  const me=west.find(e=>(e.team||{}).id==OKC);
+  if(!me) return `<div class="err">Thunder were not listed in the Western Conference standings.</div>`;
+  const seed=num(me,'playoffSeed'), rec=val(me,'overall')||'—', gb=val(me,'gamesBehind')||'—', strk=val(me,'streak')||'—';
+  const sixth=west.find(e=>num(e,'playoffSeed')===6);
+  const tenth=west.find(e=>num(e,'playoffSeed')===10);
+  let line='';
+  if(ph.name==='regular'||ph.name==='pre'){
+    if(seed>=1&&seed<=6) line=`In the playoffs as the West's #${seed} seed.`;
+    else if(seed>=7&&seed<=10) line=`In the play-in as the West's #${seed} seed.`;
+    else if(seed) line=`Outside the play-in as the West's #${seed} seed.`;
+    const playin=typ(ph.types,5), post=typ(ph.types,3);
+    if(playin&&post) line+=` The play-in starts ${fmtDateShort(playin.startDate)}; playoffs start ${fmtDateShort(post.startDate)}. Here's the race.`;
+    else if(post) line+=` Playoffs start ${fmtDateShort(post.startDate)}. Here's the race.`;
+    else line+=` Playoffs start in April. Here's the race.`;
+  }else if(ph.name==='playin'){
+    line = seed&&seed<=10?`The play-in is underway. Thunder are the West's #${seed} seed.`:`The play-in is underway. Thunder are outside the field as the West's #${seed||'—'} seed.`;
+  }else if(ph.name==='post'){
+    line = `The playoffs are underway. Thunder are the West's #${seed||'—'} seed.`;
+  }else{
+    line='The NBA is in the offseason. Standings below are from the last completed season.';
+  }
+  return `<div class="big">#${seed||'—'} West</div><div>${esc(rec)} · ${gb==='-'||gb==='0'?'Leading the West':gb+' GB'} · ${esc(strk)}</div><div class="meta">${esc(seasonName||'')} · ${esc(ph.label)}</div><p style="margin:10px 0 0">${esc(line)}</p>`;
+}
+function seriesCard(e){
+  const c=e.competitions[0], st=c.status.type, live=st.state==='in';
+  const note=((c.notes||[])[0]||{}).headline||'';
+  const series=c.series||{};
+  const rows=[...c.competitors].sort((a,b)=>a.homeAway==='home'?1:-1).map(k=>{
+    const sw=(series.competitors||[]).find(s=>s.id==k.team.id);
+    const wins=sw?` · series ${sw.wins}`:'';
+    return `<div class="row ${k.winner?'win':''}"><span>${k.homeAway==='home'?'@ ':''}${esc(k.team.displayName)}</span><b>${st.state==='pre'?'':esc(sc(k))}</b></div>${wins?`<div class="meta">${esc(k.team.abbreviation)}${wins}</div>`:''}`;
+  }).join('');
+  const okc=c.competitors.some(k=>k.team.id==OKC);
+  return `<div class="g ${live?'live':''} ${okc?'okc':''}" style="${okc?'outline:1px solid #fbbf24':''}"><div class="meta">${esc(note||'Playoffs')} · ${fmt(e.date)}${tv(c)?' · '+esc(tv(c)):''}</div>${rows}<div class="st">${live?'<span class=livetag>LIVE</span> '+esc(st.shortDetail):esc(series.summary||st.description||st.shortDetail||'')}</div></div>`;
+}
+async function loadBracket(ph){
+  const el=document.getElementById('bracket');
+  if(ph.name!=='post'&&ph.name!=='playin'){el.innerHTML='';return;}
+  const typId=ph.name==='playin'?5:3;
+  let d=null;
+  try{d=await j(`basketball/nba/scoreboard?seasontype=${typId}`);}catch(_){}
+  const ev=(d&&d.events)||[];
+  const playoffish=ev.filter(e=>{
+    const c=e.competitions[0];
+    return (c.series&&c.series.type)||(c.notes||[]).some(n=>/playoff|play-in|round|finals|cup/i.test(n.headline||''));
+  });
+  const list=playoffish.length?playoffish:ev;
+  if(!list.length){el.innerHTML=`<div class="card"><h2>Series</h2><div class="meta">No ${ph.name==='playin'?'play-in':'playoff'} games are listed on today's ESPN scoreboard yet.</div></div>`;return;}
+  // group by series note
+  const groups={};
+  for(const e of list){
+    const c=e.competitions[0];
+    const key=((c.notes||[])[0]||{}).headline||(c.series&&c.series.summary)||'Series';
+    (groups[key]||(groups[key]=[])).push(e);
+  }
+  let h=`<h2 style="margin:8px 0 10px">${ph.name==='playin'?'Play-in':'Playoff series'}</h2><div class="grid">`;
+  for(const [k,games] of Object.entries(groups)){
+    // show the most recently started / live game in the series
+    games.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    h+=seriesCard(games[0]);
+  }
+  el.innerHTML=h+'</div>';
+}
+async function load(){
+  document.getElementById('upd').textContent='Refreshing…';
+  try{
+    const d=await jany(STAND);
+    const season=d.season&&d.season.displayName||'';
+    const ph=phase(d);
+    const west=confEntries(d,'West');
+    document.getElementById('status').innerHTML=thunderStatus(west,ph,season);
+    document.getElementById('west').innerHTML=west.length?table(west):'<div class="err">No Western Conference standings.</div>';
+    const league=allEntries(d);
+    document.getElementById('league').innerHTML=league.length?table(league,{conf:true}):'<div class="err">No league standings.</div>';
+    await loadBracket(ph);
+  }catch(e){
+    document.getElementById('status').innerHTML=`<div class="err">Couldn't load standings (${esc(e.message)})</div>`;
+  }
+  document.getElementById('upd').textContent='Last updated '+stamp()+' · source: ESPN';
+  autoRefresh(load,false);
+}
+load();
+</script></body></html>

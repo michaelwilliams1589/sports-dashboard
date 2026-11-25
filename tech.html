@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=5"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=5"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5"><link rel="icon" href="icons/favicon.ico?v=5"><title>Tech Watch</title><link rel="stylesheet" href="common.css?v=5"></head>
+<body>
+<h1>📱 Tech Watch</h1>
+<div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button></div>
+<p class="note">A starter watch list for your devices and useful accessory shops. Prices are listed only when a target price is saved in the list. To change it, edit <code>tech-watch.json</code> in the <a href="https://github.com/michaelwilliams1589/sports-dashboard" style="color:#fbbf24">GitHub repo</a> and push to <code>main</code>.</p>
+<div id="list"><div class="meta">Loading watch list…</div></div>
+<div id="news"></div>
+<script src="common.js?v=5"></script><script>
+const NEWS='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.theverge.com/rss/index.xml');
+function card(it){
+  const price=it.targetPrice!=null&&it.targetPrice!==''?`<div class="big">$${esc(it.targetPrice)}</div><div class="meta">Target price</div>`:'';
+  const notes=it.notes?`<div class="meta">${esc(it.notes)}</div>`:'';
+  const href=it.link||'#';
+  const inner=`<h2>${esc(it.item||'Untitled')}</h2>${price}${notes}<div class="more">Open product page →</div>`;
+  return it.link?`<a class="card" href="${esc(href)}" target="_blank" rel="noopener">${inner}</a>`:`<div class="card">${inner}</div>`;
+}
+function renderItems(data){
+  const items=Array.isArray(data)?data:(data.items||[]);
+  if(!items.length){document.getElementById('list').innerHTML='<div class="meta">The watch list is empty. Add items to tech-watch.json.</div>';return;}
+  const groups=[];
+  for(const it of items){
+    const cat=it.category||'Other';
+    let g=groups.find(x=>x.cat===cat);
+    if(!g){g={cat,items:[]};groups.push(g);}
+    g.items.push(it);
+  }
+  document.getElementById('list').innerHTML=groups.map(g=>`<h2 style="margin:18px 0 10px">${esc(g.cat)}</h2><div class="cards two">${g.items.map(card).join('')}</div>`).join('');
+}
+async function loadNews(){
+  const el=document.getElementById('news');
+  try{
+    const d=await jany(NEWS);
+    const items=(d.items||[]).slice(0,8);
+    if(d.status!=='ok'||!items.length)return;
+    el.innerHTML=`<h2 style="margin:22px 0 10px">Tech news</h2><div class="note">Headlines from The Verge, via a public RSS feed.</div>`+items.map(it=>{
+      const when=it.pubDate?fmtD(it.pubDate):'';
+      return `<a class="card" href="${esc(it.link||'#')}" target="_blank" rel="noopener" style="margin-bottom:10px"><h2 style="font-size:16px">${esc(it.title||'')}</h2><div class="meta">${esc(when)}${it.author?' · '+esc(it.author):''}</div></a>`;
+    }).join('');
+  }catch(_){/* optional section; skip if the free feed is unavailable */}
+}
+async function load(){
+  document.getElementById('upd').textContent='Refreshing…';
+  try{
+    const d=await jany('tech-watch.json?v=5');
+    renderItems(d);
+  }catch(e){
+    document.getElementById('list').innerHTML=`<div class="err">Couldn't load the watch list (${esc(e.message)})</div>`;
+  }
+  await loadNews();
+  document.getElementById('upd').textContent='Last updated '+stamp();
+}
+load();
+</script></body></html>

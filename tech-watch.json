@@ -1,0 +1,89 @@
+{
+  "note": "Edit this file and push to main. The Tech tab renders each item as a card. Leave targetPrice empty (null) if you do not have a price to show. Fields: item, category, link, targetPrice, notes.",
+  "items": [
+    {
+      "item": "Samsung Galaxy Z Fold 8",
+      "category": "Devices",
+      "link": "https://www.samsung.com/us/smartphones/galaxy-z-fold8/",
+      "targetPrice": null,
+      "notes": "Official Samsung product page"
+    },
+    {
+      "item": "Samsung Galaxy Z Fold 8 (buy)",
+      "category": "Devices",
+      "link": "https://www.samsung.com/us/smartphones/galaxy-z-fold8/buy/",
+      "targetPrice": null,
+      "notes": "Samsung official buy page"
+    },
+    {
+      "item": "Galaxy Tab S10 Plus",
+      "category": "Devices",
+      "link": "https://www.samsung.com/us/tablets/galaxy-tab-s10/buy/galaxy-tab-s10-plus-256gb-moonstone-gray-wi-fi-sku-sm-x820nzaaxar/",
+      "targetPrice": null,
+      "notes": "Official Samsung buy page for Tab S10 Plus (256 GB, Wi-Fi)"
+    },
+    {
+      "item": "Galaxy Tab S10 lineup",
+      "category": "Devices",
+      "link": "https://www.samsung.com/us/tablets/galaxy-tab-s10/",
+      "targetPrice": null,
+      "notes": "Official family page, including the Plus model"
+    },
+    {
+      "item": "iPhone",
+      "category": "Devices",
+      "link": "https://www.apple.com/iphone/",
+      "targetPrice": null,
+      "notes": "Apple's current iPhone lineup"
+    },
+    {
+      "item": "iPhone 17",
+      "category": "Devices",
+      "link": "https://www.apple.com/iphone-17/",
+      "targetPrice": null,
+      "notes": "Dedicated iPhone 17 page still published by Apple"
+    },
+    {
+      "item": "iPad",
+      "category": "Devices",
+      "link": "https://www.apple.com/ipad/",
+      "targetPrice": null,
+      "notes": "Apple's current iPad lineup"
+    },
+    {
+      "item": "iPad Pro",
+      "category": "Devices",
+      "link": "https://www.apple.com/ipad-pro/",
+      "targetPrice": null,
+      "notes": "Official iPad Pro page"
+    },
+    {
+      "item": "Samsung mobile accessories",
+      "category": "Accessories & shops",
+      "link": "https://www.samsung.com/us/mobile-accessories/all-mobile-accessories/",
+      "targetPrice": null,
+      "notes": "Cases, chargers, buds, and tablet covers"
+    },
+    {
+      "item": "iPhone accessories",
+      "category": "Accessories & shops",
+      "link": "https://www.apple.com/shop/iphone/accessories",
+      "targetPrice": null,
+      "notes": "Cases, MagSafe, AirPods, and chargers"
+    },
+    {
+      "item": "iPad accessories",
+      "category": "Accessories & shops",
+      "link": "https://www.apple.com/shop/ipad/accessories",
+      "targetPrice": null,
+      "notes": "Magic Keyboard, Apple Pencil, and cases"
+    },
+    {
+      "item": "Shop iPhone at Apple",
+      "category": "Accessories & shops",
+      "link": "https://www.apple.com/shop/buy-iphone",
+      "targetPrice": null,
+      "notes": "Apple's official iPhone store"
+    }
+  ]
+}
