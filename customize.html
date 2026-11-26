@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=7"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=7"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=7"><link rel="icon" href="icons/favicon.ico?v=7"><title>Customize</title><link rel="stylesheet" href="common.css?v=7"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><script src="theme-boot.js?v=8"></script><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=8"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=8"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=8"><link rel="icon" href="icons/favicon.ico?v=8"><title>Customize</title><link rel="stylesheet" href="common.css?v=8"></head>
 <body>
 <h1>⚙ Customize</h1>
 <p class="note" id="intro">Your choices are saved on this phone only. They are not uploaded anywhere. Michael's original setup is the default until you save your own.</p>
@@ -17,6 +17,37 @@
   <h2>Hub name</h2>
   <label class="fld"><span>Title on the Home tab</span><input id="hubName" type="text" maxlength="40" autocomplete="off"></label>
 </div>
+<div class="section" id="lookSection">
+  <h2>Look &amp; icon</h2>
+  <p class="note">Change the theme, colors, background, and app icon on this phone. Dark mode is the default, so the original look stays until you pick something else.</p>
+  <div class="lbl">Theme</div>
+  <div class="btnrow" id="themeRow"></div>
+  <div class="lbl">Accent color</div>
+  <div class="swatches" id="swatches"></div>
+  <div class="lbl">Background</div>
+  <div class="bg-picks" id="bgPicks"></div>
+  <div class="btnrow">
+    <button type="button" class="ghost" onclick="document.getElementById('bgFile').click()">Upload photo</button>
+    <button type="button" class="ghost" id="bgClear" onclick="clearBgPhoto()">Remove photo</button>
+  </div>
+  <input id="bgFile" type="file" accept="image/*" hidden>
+  <div class="meta" id="bgOut"></div>
+  <div class="lbl">App icon</div>
+  <div class="btnrow" id="iconTypeRow"></div>
+  <div id="iconPreview" class="icon-preview" aria-hidden="true"></div>
+  <div id="iconEmojiRow">
+    <label class="fld"><span>Emoji or initial</span><input id="iconEmoji" type="text" maxlength="8" autocomplete="off"></label>
+    <label class="fld"><span>Icon background</span><input id="iconColor" type="color" value="#fbbf24"></label>
+  </div>
+  <div class="btnrow">
+    <button type="button" class="ghost" onclick="document.getElementById('iconFile').click()">Upload icon photo</button>
+    <button type="button" class="ghost" onclick="clearIconPhoto()">Remove icon photo</button>
+  </div>
+  <input id="iconFile" type="file" accept="image/*" hidden>
+  <p class="note" id="iconHint"></p>
+  <div class="meta" id="iconOut"></div>
+</div>
+
 <div class="section">
   <h2>Tabs</h2>
   <p class="note">Turn modules on or off and reorder them. Hidden tabs also disappear from Home. Home and Customize always stay available.</p>
@@ -67,7 +98,7 @@
 </div>
 <div class="section">
   <h2>Backup &amp; reset</h2>
-  <p class="note">On an iPhone, copy this code before you switch phones or after you Add to Home Screen — the installed app can have its own storage. Paste it there and tap Import.</p>
+  <p class="note">On an iPhone, copy this code before you switch phones or after you Add to Home Screen — the installed app can have its own storage. Paste it there and tap Import. Uploaded background and icon photos are left out of this code so it stays short — re-add those photos on the new phone.</p>
   <label class="fld"><span>Settings code</span><textarea id="backup" spellcheck="false"></textarea></label>
   <div class="btnrow">
     <button type="button" onclick="doExport()">Copy settings code</button>
@@ -81,7 +112,7 @@
   <a href="index.html"><button type="button" class="ghost">Done — go to Home</button></a>
   <span class="ok" id="saved"></span>
 </div>
-<script src="config.js?v=7"></script><script src="common.js?v=7"></script><script>
+<script src="config.js?v=8"></script><script src="common.js?v=8"></script><script>
 let cityTimer, teamTimer, proCache={};
 
 if(new URLSearchParams(location.search).get('welcome')==='1'){
@@ -144,6 +175,128 @@ async function installApp(){
 }
 window.addEventListener('hub-install-ready',()=>applyDeviceUI());
 
+
+function ensureAppearance(){
+  HUB.appearance=normalizeAppearance(HUB.appearance);
+  return HUB.appearance;
+}
+function iconHint(){
+  const d=hubDevice();
+  if(d==='ios') return 'On iPhone: after you pick an icon, open this page in Safari, tap Share, then Add to Home Screen. If the app is already on your Home Screen, remove the old shortcut and add it again to use the new icon.';
+  if(d==='android') return 'On Android, this icon appears as the badge at the top of the app. The Home Screen shortcut icon comes from your phone’s launcher and usually can’t be changed from a website.';
+  return 'This icon appears as the badge at the top of the app. On iPhone it can also become the Home Screen icon when you Add to Home Screen after picking it.';
+}
+function renderLook(){
+  const box=document.getElementById('lookSection');
+  if(!box)return;
+  const a=ensureAppearance();
+  const themes=[['dark','Dark'],['light','Light'],['auto','Auto (System)']];
+  document.getElementById('themeRow').innerHTML=themes.map(([id,lab])=>
+    `<button type="button" class="${a.theme===id?'':'ghost'}" onclick="setTheme('${id}')">${lab}</button>`
+  ).join('');
+  document.getElementById('swatches').innerHTML=ACCENT_SWATCHES.map(c=>
+    `<button type="button" class="swatch${a.accent===c?' on':''}" style="background:${c}" title="${c}" onclick="setAccent('${c}')"></button>`
+  ).join('')+`<input type="color" id="accentPick" value="${esc(a.accent)}" title="Custom color">`;
+  const pick=document.getElementById('accentPick');
+  pick.addEventListener('input',e=>setAccent(e.target.value,true));
+  pick.addEventListener('change',e=>setAccent(e.target.value));
+  const previews={
+    default:'',
+    dusk:'linear-gradient(165deg,#1e1b4b,#9a3412)',
+    ocean:'linear-gradient(165deg,#082f49,#0e7490)',
+    forest:'linear-gradient(165deg,#052e16,#3f6212)',
+    aurora:'linear-gradient(165deg,#2e1065,#0f766e)',
+    slate:'linear-gradient(180deg,#111827,#334155)',
+    photo:a.backgroundPhoto?('url('+a.backgroundPhoto+')'):''
+  };
+  document.getElementById('bgPicks').innerHTML=BG_PRESETS.map(p=>{
+    const on=a.background===p.id?' on':'';
+    const bg=previews[p.id]||'';
+    const style=bg?` style="background-image:${bg};background-size:cover;background-position:center;background-color:var(--card)"`:' style="background:var(--card)"';
+    return `<button type="button" class="bg-pick${on}"${style} onclick="setBackground('${p.id}')">${esc(p.label)}</button>`;
+  }).join('');
+  const clear=document.getElementById('bgClear');
+  if(clear)clear.style.display=a.backgroundPhoto?'':'none';
+  const types=[['default','Default icon'],['emoji','Emoji / initial'],['photo','Photo']];
+  document.getElementById('iconTypeRow').innerHTML=types.map(([id,lab])=>
+    `<button type="button" class="${a.iconType===id?'':'ghost'}" onclick="setIconType('${id}')">${lab}</button>`
+  ).join('');
+  const prev=document.getElementById('iconPreview');
+  if(a.iconType==='photo'&&a.iconPhoto){prev.innerHTML='<img alt="" src="'+a.iconPhoto+'">';prev.style.background='transparent';prev.style.color='';}
+  else if(a.iconType==='emoji'){prev.innerHTML='';prev.textContent=a.iconEmoji||'🏠';prev.style.background=a.iconColor||a.accent;prev.style.color=contrastInk(a.iconColor||a.accent);}
+  else {prev.innerHTML='<img alt="" src="icons/apple-touch-icon.png?v=8">';prev.style.background='transparent';prev.style.color='';}
+  const er=document.getElementById('iconEmojiRow');
+  if(er)er.style.display=a.iconType==='emoji'?'block':'none';
+  const em=document.getElementById('iconEmoji');
+  const ic=document.getElementById('iconColor');
+  if(em&&document.activeElement!==em)em.value=a.iconEmoji||'🏠';
+  if(ic&&document.activeElement!==ic)ic.value=sanitizeHex(a.iconColor||a.accent,'#fbbf24');
+  document.getElementById('iconHint').textContent=iconHint();
+}
+function commitLook(skipRender){
+  if(typeof applyAppearance==='function')applyAppearance();
+  saveAll(true,{skipMods:true,skipFavs:true,skipLook:!!skipRender});
+}
+function setTheme(t){ensureAppearance().theme=t;commitLook();}
+function setAccent(c,soft){
+  ensureAppearance().accent=sanitizeHex(c,'#fbbf24');
+  if(typeof applyAppearance==='function')applyAppearance();
+  if(soft)return;
+  commitLook();
+}
+function setBackground(id){
+  const a=ensureAppearance();
+  if(id==='photo'){
+    if(!a.backgroundPhoto){document.getElementById('bgFile').click();return;}
+    a.background='photo';
+  }else a.background=id;
+  commitLook();
+}
+function setIconType(t){
+  const a=ensureAppearance();
+  if(t==='photo'&&!a.iconPhoto){document.getElementById('iconFile').click();return;}
+  a.iconType=t;
+  commitLook();
+}
+function onBgFile(ev){
+  const f=ev.target.files&&ev.target.files[0];
+  ev.target.value='';
+  if(!f)return;
+  resizeImageFile(f,900,0.72,'image/jpeg').then(data=>{
+    const a=ensureAppearance();
+    a.backgroundPhoto=data;
+    a.background='photo';
+    flash('bgOut','Photo saved as the background.',true);
+    commitLook();
+  }).catch(e=>flash('bgOut',e.message||'Could not use that photo.',false));
+}
+function clearBgPhoto(){
+  const a=ensureAppearance();
+  a.backgroundPhoto='';
+  if(a.background==='photo')a.background='default';
+  flash('bgOut','Background photo removed.',true);
+  commitLook();
+}
+function onIconFile(ev){
+  const f=ev.target.files&&ev.target.files[0];
+  ev.target.value='';
+  if(!f)return;
+  cropSquarePng(f,180).then(data=>{
+    const a=ensureAppearance();
+    a.iconPhoto=data;
+    a.iconType='photo';
+    flash('iconOut','Icon photo saved.',true);
+    commitLook();
+  }).catch(e=>flash('iconOut',e.message||'Could not use that photo.',false));
+}
+function clearIconPhoto(){
+  const a=ensureAppearance();
+  a.iconPhoto='';
+  if(a.iconType==='photo')a.iconType='default';
+  flash('iconOut','Icon photo removed.',true);
+  commitLook();
+}
+
 function fill(){
   document.getElementById('hubName').value=HUB.name||'';
   document.getElementById('calSrc').value=(HUB.calendar&&HUB.calendar.googleSrc)||'';
@@ -158,6 +311,8 @@ function fill(){
   sel.innerHTML=Object.entries(LEAGUES).filter(([k])=>k!=='wcbb').map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
   document.getElementById('backup').value=exportConfig();
   applyDeviceUI();
+  renderLook();
+  if(typeof applyAppearance==='function')applyAppearance();
 }
 
 function cityLabel(){
@@ -357,11 +512,18 @@ function saveAll(showDone,opts){
   opts=opts||{};
   readForm();
   if(HUB.origin==='default')HUB.origin='custom';
-  saveConfig(HUB);
+  try{
+    saveConfig(HUB);
+  }catch(e){
+    flash('saved',e.message,false);
+    return;
+  }
+  if(typeof applyAppearance==='function')applyAppearance();
   document.getElementById('backup').value=exportConfig();
   cityLabel();
   if(!opts.skipMods)renderMods();
   if(!opts.skipFavs)renderFavs();
+  if(!opts.skipLook)renderLook();
   if(showDone!==false)flash('saved','Saved on this phone');
   const navEl=document.querySelector('nav');if(navEl)navEl.remove();
   const gear=document.querySelector('a.gear');if(gear)gear.remove();
@@ -380,7 +542,9 @@ function copyShare(){
 function doExport(){
   const code=exportConfig();
   document.getElementById('backup').value=code;
-  copyText(code).then(()=>flash('backupOut','Settings code copied. Save it somewhere safe.',true)).catch(()=>flash('backupOut','Select the text above and copy it.',false));
+  let msg='Settings code copied. Save it somewhere safe.';
+  try{if(JSON.parse(code)._photosOmitted)msg='Settings code copied. Your background and icon photos were left out so the code stays short — re-add those photos on the new phone.';}catch(_){}
+  copyText(code).then(()=>flash('backupOut',msg,true)).catch(()=>flash('backupOut','Select the text above and copy it.',false));
 }
 function doImport(){
   try{
@@ -406,5 +570,10 @@ document.getElementById('hubName').addEventListener('change',()=>saveAll());
 document.getElementById('calSrc').addEventListener('change',()=>saveAll());
 document.getElementById('cal2l').addEventListener('change',()=>saveAll());
 document.getElementById('cal2u').addEventListener('change',()=>saveAll());
+document.getElementById('bgFile').addEventListener('change',onBgFile);
+document.getElementById('iconFile').addEventListener('change',onIconFile);
+document.getElementById('iconEmoji').addEventListener('change',()=>{ensureAppearance().iconEmoji=(document.getElementById('iconEmoji').value||'').trim()||'🏠';commitLook();});
+document.getElementById('iconColor').addEventListener('input',e=>{ensureAppearance().iconColor=sanitizeHex(e.target.value,'#fbbf24');if(typeof applyAppearance==='function')applyAppearance();});
+document.getElementById('iconColor').addEventListener('change',e=>{ensureAppearance().iconColor=sanitizeHex(e.target.value,'#fbbf24');commitLook();});
 fill();
 </script></body></html>

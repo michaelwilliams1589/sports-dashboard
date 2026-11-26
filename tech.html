@@ -1,11 +1,11 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=7"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=7"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=7"><link rel="icon" href="icons/favicon.ico?v=7"><title>Tech Watch</title><link rel="stylesheet" href="common.css?v=7"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><script src="theme-boot.js?v=8"></script><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=8"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=8"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=8"><link rel="icon" href="icons/favicon.ico?v=8"><title>Tech Watch</title><link rel="stylesheet" href="common.css?v=8"></head>
 <body>
 <h1>📱 Tech Watch</h1>
 <div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button></div>
-<p class="note">A starter watch list for your devices and useful accessory shops. Prices are listed only when a target price is saved in the list. Add or edit your own links in <a href="customize.html" style="color:#fbbf24">Customize</a>. They stay on this phone. If you haven't added any, the built-in starter list is shown.</p>
+<p class="note">A starter watch list for your devices and useful accessory shops. Prices are listed only when a target price is saved in the list. Add or edit your own links in <a href="customize.html" class="accent-link">Customize</a>. They stay on this phone. If you haven't added any, the built-in starter list is shown.</p>
 <div id="list"><div class="meta">Loading watch list…</div></div>
 <div id="news"></div>
-<script src="config.js?v=7"></script><script src="common.js?v=7"></script><script>
+<script src="config.js?v=8"></script><script src="common.js?v=8"></script><script>
 const NEWS='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://www.theverge.com/rss/index.xml');
 function card(it){
   const price=it.targetPrice!=null&&it.targetPrice!==''?`<div class="big">$${esc(it.targetPrice)}</div><div class="meta">Target price</div>`:'';
@@ -44,7 +44,7 @@ async function load(){
     if(Array.isArray(HUB.techItems)){
       renderItems({items:HUB.techItems});
     }else{
-      const d=await jany('tech-watch.json?v=7');
+      const d=await jany('tech-watch.json?v=8');
       renderItems(d);
     }
   }catch(e){

@@ -63,7 +63,8 @@ function defaultConfig(){
     tabOrder:['home','calendar','scores','ou-football','osu-football','ou-basketball','osu-basketball','thunder','playoffs','nfl','rankings','tech','packages'],
     teams:defaultTeams(),
     techItems:null,
-    device:''
+    device:'',
+    appearance:{theme:'dark',accent:'#fbbf24',background:'default',backgroundPhoto:'',iconType:'default',iconEmoji:'🏠',iconColor:'#fbbf24',iconPhoto:''}
   };
 }
 
@@ -82,7 +83,8 @@ function setupConfig(){
     tabOrder:['home','calendar','scores','playoffs','nfl','rankings','tech','packages'],
     teams:[],
     techItems:[],
-    device:detectDevice()
+    device:detectDevice(),
+    appearance:{theme:'dark',accent:'#fbbf24',background:'default',backgroundPhoto:'',iconType:'default',iconEmoji:'🏠',iconColor:'#fbbf24',iconPhoto:''}
   };
 }
 
@@ -97,6 +99,7 @@ function normalize(raw){
   if(raw.units==='celsius'||raw.units==='fahrenheit')c.units=raw.units;
   if(raw.device==='android'||raw.device==='ios')c.device=raw.device;
   else if(raw.device==='')c.device='';
+  c.appearance=normalizeAppearance(raw.appearance);
   if(raw.weather&&typeof raw.weather==='object')c.weather=Object.assign(c.weather,raw.weather);
   if(raw.calendar&&typeof raw.calendar==='object')c.calendar=Object.assign({},c.calendar,raw.calendar);
   if(raw.modules&&typeof raw.modules==='object')c.modules=Object.assign({},c.modules,raw.modules);
@@ -157,19 +160,35 @@ function loadConfig(){
 function saveConfig(c){
   const next=normalize(c);
   if(next.origin==='default')next.origin='custom';
-  try{localStorage.setItem(HUB_STORE,JSON.stringify(next));}catch(e){console.warn('Could not save settings',e);}
+  try{
+    localStorage.setItem(HUB_STORE,JSON.stringify(next));
+  }catch(e){
+    console.warn('Could not save settings',e);
+    throw Error('Could not save (storage is full). Try a smaller photo, or clear the background photo.');
+  }
   HUB=next;
+  if(typeof applyAppearance==='function')applyAppearance();
   return next;
 }
 
 function resetConfig(){
   try{localStorage.removeItem(HUB_STORE);}catch(_){}
   HUB=defaultConfig();
+  if(typeof applyAppearance==='function')applyAppearance();
   return HUB;
 }
 
 function exportConfig(){
-  return JSON.stringify(HUB,null,2);
+  const copy=JSON.parse(JSON.stringify(HUB||{}));
+  const a=copy.appearance||{};
+  const omitted=!!(isDataUrl(a.backgroundPhoto)||isDataUrl(a.iconPhoto));
+  if(a.background==='photo'&&isDataUrl(a.backgroundPhoto))a.background='default';
+  if(a.iconType==='photo'&&isDataUrl(a.iconPhoto))a.iconType='default';
+  a.backgroundPhoto='';
+  a.iconPhoto='';
+  copy.appearance=a;
+  if(omitted)copy._photosOmitted=true;
+  return JSON.stringify(copy,null,2);
 }
 
 function importConfig(text){
@@ -283,7 +302,205 @@ if(typeof location!=='undefined'&&typeof localStorage!=='undefined'){
   }catch(_){}
 }
 
+
+const ACCENT_SWATCHES=['#fbbf24','#38bdf8','#34d399','#fb7185','#a78bfa','#fb923c','#f87171','#60a5fa','#e2e8f0','#f472b6'];
+const BG_PRESETS=[
+  {id:'default',label:'Default'},
+  {id:'dusk',label:'Dusk'},
+  {id:'ocean',label:'Ocean'},
+  {id:'forest',label:'Forest'},
+  {id:'aurora',label:'Aurora'},
+  {id:'slate',label:'Slate'},
+  {id:'photo',label:'Photo'}
+];
+
+function isDataUrl(s){
+  return typeof s==='string'&&s.indexOf('data:image/')===0&&s.length>32&&s.length<900000;
+}
+function sanitizeHex(h,fallback){
+  const t=String(h||'').trim();
+  if(/^#([0-9a-fA-F]{6})$/.test(t))return t.toLowerCase();
+  if(/^#([0-9a-fA-F]{3})$/.test(t)){
+    const x=t.slice(1).toLowerCase();
+    return '#'+x[0]+x[0]+x[1]+x[1]+x[2]+x[2];
+  }
+  return fallback||'#fbbf24';
+}
+function normalizeAppearance(a){
+  a=(a&&typeof a==='object')?a:{};
+  const theme=(a.theme==='light'||a.theme==='auto')?a.theme:'dark';
+  const accent=sanitizeHex(a.accent,'#fbbf24');
+  const ids=BG_PRESETS.map(p=>p.id);
+  let background=ids.includes(a.background)?a.background:'default';
+  const backgroundPhoto=isDataUrl(a.backgroundPhoto)?a.backgroundPhoto:'';
+  if(background==='photo'&&!backgroundPhoto)background='default';
+  let iconType=(a.iconType==='emoji'||a.iconType==='photo')?a.iconType:'default';
+  const iconEmoji=(typeof a.iconEmoji==='string'&&a.iconEmoji.trim())?a.iconEmoji.trim().slice(0,8):'🏠';
+  const iconColor=sanitizeHex(a.iconColor,accent);
+  const iconPhoto=isDataUrl(a.iconPhoto)?a.iconPhoto:'';
+  if(iconType==='photo'&&!iconPhoto)iconType='default';
+  return {theme,accent,background,backgroundPhoto,iconType,iconEmoji,iconColor,iconPhoto};
+}
+function parseHex(h){
+  const t=sanitizeHex(h,'#fbbf24').slice(1);
+  return [parseInt(t.slice(0,2),16),parseInt(t.slice(2,4),16),parseInt(t.slice(4,6),16)];
+}
+function luminance(hex){
+  const a=parseHex(hex).map(v=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4)});
+  return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2];
+}
+function contrastInk(hex){return luminance(hex)>0.45?'#0f172a':'#ffffff'}
+function mixHex(hex,toward,amt){
+  const a=parseHex(hex),b=parseHex(toward);
+  return '#'+[0,1,2].map(i=>Math.round(a[i]+(b[i]-a[i])*amt).toString(16).padStart(2,'0')).join('');
+}
+function accentTextColor(hex,theme){
+  if(theme==='light'){
+    if(luminance(hex)>0.35)return mixHex(hex,'#0f172a',0.55);
+    return hex;
+  }
+  if(luminance(hex)<0.25)return mixHex(hex,'#ffffff',0.45);
+  return hex;
+}
+function resolvedTheme(pref){
+  if(pref==='light')return 'light';
+  if(pref==='auto'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)return 'light';
+  return 'dark';
+}
+function applyThemeColorMeta(theme,accent){
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute('content',theme==='light'?'#f1f5f9':(accent&&luminance(accent)<0.4?accent:'#0f172a'));
+  const bar=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if(bar)bar.setAttribute('content',theme==='light'?'default':'black-translucent');
+}
+function applyCustomIconLinks(app){
+  let url='';
+  if(app.iconType==='photo'&&isDataUrl(app.iconPhoto))url=app.iconPhoto;
+  else if(app.iconType==='emoji')url=makeEmojiIcon(app.iconEmoji,app.iconColor);
+  document.querySelectorAll('link[rel="apple-touch-icon"]').forEach(el=>{
+    el.setAttribute('href',url||'icons/apple-touch-icon.png?v=8');
+  });
+  const fav=document.querySelector('link[rel="icon"][type="image/png"]')||document.querySelector('link[rel="icon"]');
+  if(fav){
+    if(url)fav.setAttribute('href',url);
+    else if(fav.getAttribute('type')==='image/png')fav.setAttribute('href','icons/favicon-32.png?v=8');
+  }
+}
+function makeEmojiIcon(emoji,color){
+  try{
+    const c=document.createElement('canvas');
+    c.width=180;c.height=180;
+    const x=c.getContext('2d');
+    x.fillStyle=sanitizeHex(color,'#fbbf24');
+    x.fillRect(0,0,180,180);
+    x.font='110px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    x.textAlign='center';
+    x.textBaseline='middle';
+    x.fillText((emoji||'🏠').slice(0,4),90,100);
+    return c.toDataURL('image/png');
+  }catch(e){return ''}
+}
+function applyAppearance(){
+  if(typeof document==='undefined')return;
+  const app=normalizeAppearance((typeof HUB!=='undefined'&&HUB&&HUB.appearance)||{});
+  if(typeof HUB!=='undefined'&&HUB)HUB.appearance=app;
+  const theme=resolvedTheme(app.theme);
+  const root=document.documentElement;
+  root.setAttribute('data-theme',theme);
+  root.style.setProperty('--accent',app.accent);
+  root.style.setProperty('--accent-ink',contrastInk(app.accent));
+  root.style.setProperty('--accent-text',accentTextColor(app.accent,theme));
+  root.setAttribute('data-bg',app.background);
+  root.classList.remove('has-bg');
+  root.style.removeProperty('--bg-image');
+  if(app.background==='photo'&&app.backgroundPhoto){
+    root.style.setProperty('--bg-image','url('+app.backgroundPhoto+')');
+    root.classList.add('has-bg');
+  }else if(app.background&&app.background!=='default'){
+    root.classList.add('has-bg');
+  }
+  applyThemeColorMeta(theme,app.accent);
+  applyCustomIconLinks(app);
+  applyHubBadge(app);
+}
+function applyHubBadge(app){
+  if(typeof document==='undefined'||!document.body)return;
+  let el=document.getElementById('hubBadge');
+  const show=app&&(app.iconType==='emoji'||app.iconType==='photo');
+  if(!show){
+    if(el)el.remove();
+    document.body.classList.remove('has-hub-badge');
+    return;
+  }
+  if(!el){
+    el=document.createElement('a');
+    el.id='hubBadge';
+    el.className='hub-badge';
+    el.href='index.html';
+    el.title='Home';
+    document.body.appendChild(el);
+  }
+  document.body.classList.add('has-hub-badge');
+  if(app.iconType==='photo'&&app.iconPhoto){
+    el.innerHTML='<img alt="" src="'+app.iconPhoto+'">';
+    el.style.background='transparent';
+    el.style.color='';
+  }else{
+    el.innerHTML='';
+    el.textContent=app.iconEmoji||'🏠';
+    el.style.background=app.iconColor||app.accent||'#fbbf24';
+    el.style.color=contrastInk(app.iconColor||app.accent||'#fbbf24');
+  }
+}
+function resizeImageFile(file,maxW,quality,mime){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type||file.type.indexOf('image/')!==0)return reject(Error('Please pick an image.'));
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const scale=Math.min(1,(maxW||900)/Math.max(img.width,img.height||1));
+        const w=Math.max(1,Math.round(img.width*scale));
+        const h=Math.max(1,Math.round(img.height*scale));
+        const c=document.createElement('canvas');
+        c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL(mime||'image/jpeg',quality==null?0.72:quality));
+      }catch(e){URL.revokeObjectURL(url);reject(e)}
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Could not read that image.'))};
+    img.src=url;
+  });
+}
+function cropSquarePng(file,size){
+  return new Promise((resolve,reject)=>{
+    if(!file||!file.type||file.type.indexOf('image/')!==0)return reject(Error('Please pick an image.'));
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const s=size||180;
+        const side=Math.min(img.width,img.height);
+        const sx=Math.floor((img.width-side)/2);
+        const sy=Math.floor((img.height-side)/2);
+        const c=document.createElement('canvas');
+        c.width=s;c.height=s;
+        c.getContext('2d').drawImage(img,sx,sy,side,side,0,0,s,s);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/png'));
+      }catch(e){URL.revokeObjectURL(url);reject(e)}
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Could not read that image.'))};
+    img.src=url;
+  });
+}
+
 var HUB=loadConfig();
+if(typeof document!=='undefined'){
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyAppearance);
+  else applyAppearance();
+}
 
 function applyDeviceClass(){
   if(typeof document==='undefined'||!document.body)return;
@@ -292,6 +509,13 @@ function applyDeviceClass(){
   document.body.classList.toggle('hub-ios',d==='ios');
 }
 if(typeof window!=='undefined'){
+  try{
+    if(window.matchMedia){
+      matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>{
+        if(typeof HUB!=='undefined'&&HUB&&HUB.appearance&&HUB.appearance.theme==='auto')applyAppearance();
+      });
+    }
+  }catch(_){}
   window.__hubInstallPrompt=null;
   window.addEventListener('beforeinstallprompt',e=>{
     e.preventDefault();

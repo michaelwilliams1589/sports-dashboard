@@ -43,7 +43,9 @@ At the top of Customize, pick **Android** or **iPhone** (auto-detected when we c
 - Your own name, city (search any city or U.S. ZIP), °F/°C, favorite teams, calendar, and links are saved on that device only.
 - Until you save a custom setup, the app uses the original default (Okmulgee weather, OU/OSU/Thunder, and the owner's calendar).
 - Share this clean link with friends so they start from a blank setup and do **not** inherit the default personal calendar: https://michaelwilliams1589.github.io/sports-dashboard/?setup=1
-- Use **Copy settings code** / **Import** to move your setup to another phone, and **Reset to defaults** to restore the original hub.
+- In **Look & icon**, pick Dark, Light, or Auto (system), an accent color, a background (solid, a gradient, or a photo), and a custom app icon (emoji/initial or a photo). Dark is the default, so the original look stays until you change it.
+- A custom icon shows as the badge at the top of the app. On iPhone, pick the icon first, then use Safari → Share → **Add to Home Screen** (re-add if it’s already installed) so the Home Screen icon can update. On Android, the in-app badge changes; the Home Screen icon usually comes from the phone’s launcher.
+- Use **Copy settings code** / **Import** to move your setup to another phone, and **Reset to defaults** to restore the original hub. Uploaded photos are left out of the settings code so it stays short — re-add those photos on the new phone.
 
 ## How it works
 
