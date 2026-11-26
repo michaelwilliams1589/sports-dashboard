@@ -1,8 +1,18 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Customize</title><link rel="stylesheet" href="common.css?v=6"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=7"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=7"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=7"><link rel="icon" href="icons/favicon.ico?v=7"><title>Customize</title><link rel="stylesheet" href="common.css?v=7"></head>
 <body>
 <h1>⚙ Customize</h1>
 <p class="note" id="intro">Your choices are saved on this phone only. They are not uploaded anywhere. Michael's original setup is the default until you save your own.</p>
 <div id="welcome"></div>
+<div class="section" id="deviceSection">
+  <h2>What phone are you on?</h2>
+  <p class="note">We'll tailor the install steps and a few defaults for your phone. You can change this anytime.</p>
+  <div class="btnrow device-pick">
+    <button type="button" id="devAndroid" class="ghost" onclick="setDevice('android')">Android</button>
+    <button type="button" id="devIos" class="ghost" onclick="setDevice('ios')">iPhone</button>
+  </div>
+  <div id="deviceTips"></div>
+  <div id="installRow" class="btnrow"></div>
+</div>
 <div class="section">
   <h2>Hub name</h2>
   <label class="fld"><span>Title on the Home tab</span><input id="hubName" type="text" maxlength="40" autocomplete="off"></label>
@@ -38,6 +48,7 @@
 <div class="section">
   <h2>Calendar</h2>
   <p class="note">Paste your Google Calendar email or an embed URL. Events show only when you're signed in to Google — they are not stored in this app. Leave this blank if you don't want a calendar, or turn the Calendar tab off above.</p>
+  <div class="cal-quick" id="calQuick"></div>
   <label class="fld"><span>Google Calendar email or embed URL</span><input id="calSrc" type="text" placeholder="you@gmail.com or https://calendar.google.com/calendar/embed?src=…" autocomplete="off"></label>
   <label class="fld"><span>Optional second calendar button label</span><input id="cal2l" type="text" placeholder="Open Outlook Calendar" autocomplete="off"></label>
   <label class="fld"><span>Optional second calendar link</span><input id="cal2u" type="url" placeholder="https://outlook.live.com/calendar/" autocomplete="off"></label>
@@ -70,7 +81,7 @@
   <a href="index.html"><button type="button" class="ghost">Done — go to Home</button></a>
   <span class="ok" id="saved"></span>
 </div>
-<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+<script src="config.js?v=7"></script><script src="common.js?v=7"></script><script>
 let cityTimer, teamTimer, proCache={};
 
 if(new URLSearchParams(location.search).get('welcome')==='1'){
@@ -79,6 +90,59 @@ if(new URLSearchParams(location.search).get('welcome')==='1'){
 }
 
 function flash(id,msg,ok){const el=document.getElementById(id);el.textContent=msg;el.className=ok===false?'err':'ok';}
+
+
+function setDevice(d){
+  HUB.device=d;
+  applyDeviceUI();
+  saveAll(true,{skipMods:true,skipFavs:true});
+}
+function applyDeviceUI(){
+  const d=hubDevice();
+  if(typeof applyDeviceClass==='function')applyDeviceClass();
+  const a=document.getElementById('devAndroid'), i=document.getElementById('devIos');
+  if(a)a.className=d==='android'?'':'ghost';
+  if(i)i.className=d==='ios'?'':'ghost';
+  const tips=document.getElementById('deviceTips');
+  if(tips){
+    if(d==='android'){
+      tips.innerHTML='<div class="banner"><b>Android setup</b><ol><li>In Chrome, tap the menu (⋮) and choose <b>Install app</b> or <b>Add to Home screen</b>.</li><li>If an Install button appears below, you can use that instead.</li><li>After you change tabs, pull down to refresh or reopen the app if something looks out of date.</li></ol></div>';
+    }else if(d==='ios'){
+      tips.innerHTML='<div class="banner"><b>iPhone setup</b><ol><li>Open this page in <b>Safari</b> (not Chrome), tap the <b>Share</b> button, then <b>Add to Home Screen</b>.</li><li>Customize inside the installed app, or copy your settings code after installing — Safari and the Home Screen app can keep separate settings.</li><li>The bottom tab bar has extra space for the iPhone home indicator.</li></ol></div>';
+    }else{
+      tips.innerHTML='<div class="note">Pick Android or iPhone so we can show the right install steps.</div>';
+    }
+  }
+  const inst=document.getElementById('installRow');
+  if(inst){
+    if(d==='android'&&window.__hubInstallPrompt){
+      inst.innerHTML='<button type="button" onclick="installApp()">Install App</button>';
+    }else inst.innerHTML='';
+  }
+  const q=document.getElementById('calQuick');
+  if(q){
+    let h='<span class="lbl">Quick links for a second calendar</span><div class="btnrow">';
+    h+='<button type="button" class="ghost" onclick="useSecondary(\'Open Google Calendar\',\'https://calendar.google.com\')">Google Calendar</button>';
+    h+='<button type="button" class="ghost" onclick="useSecondary(\'Open Outlook Calendar\',\'https://outlook.live.com/calendar/\')">Outlook Calendar</button>';
+    if(d==='ios') h+='<button type="button" class="ghost" onclick="useSecondary(\'Open iCloud Calendar\',\'https://www.icloud.com/calendar\')">iCloud Calendar</button>';
+    h+='</div>';
+    q.innerHTML=h;
+  }
+}
+function useSecondary(label,url){
+  document.getElementById('cal2l').value=label;
+  document.getElementById('cal2u').value=url;
+  saveAll();
+}
+async function installApp(){
+  const ev=window.__hubInstallPrompt;
+  if(!ev)return;
+  ev.prompt();
+  try{await ev.userChoice;}catch(_){}
+  window.__hubInstallPrompt=null;
+  applyDeviceUI();
+}
+window.addEventListener('hub-install-ready',()=>applyDeviceUI());
 
 function fill(){
   document.getElementById('hubName').value=HUB.name||'';
@@ -93,6 +157,7 @@ function fill(){
   const sel=document.getElementById('league');
   sel.innerHTML=Object.entries(LEAGUES).filter(([k])=>k!=='wcbb').map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
   document.getElementById('backup').value=exportConfig();
+  applyDeviceUI();
 }
 
 function cityLabel(){
@@ -127,7 +192,9 @@ function toggleMod(id,on){
   const team=(HUB.teams||[]).find(t=>t.key===id);
   if(team)team.on=!!on;
   else {HUB.modules=HUB.modules||{};if(id!=='home')HUB.modules[id]=!!on;}
-  saveAll();
+  // Don't rebuild the checkbox list here: on Android the delayed click after
+  // change would hit the replacement checkbox and immediately toggle it back.
+  saveAll(true,{skipMods:true,skipFavs:true});
 }
 function moveMod(id,dir){
   const order=currentOrder();
@@ -286,16 +353,17 @@ function readForm(){
   };
 }
 
-function saveAll(showDone){
+function saveAll(showDone,opts){
+  opts=opts||{};
   readForm();
   if(HUB.origin==='default')HUB.origin='custom';
   saveConfig(HUB);
   document.getElementById('backup').value=exportConfig();
   cityLabel();
-  renderMods();
-  renderFavs();
+  if(!opts.skipMods)renderMods();
+  if(!opts.skipFavs)renderFavs();
   if(showDone!==false)flash('saved','Saved on this phone');
-  const nav=document.querySelector('nav');if(nav)nav.remove();
+  const navEl=document.querySelector('nav');if(navEl)navEl.remove();
   const gear=document.querySelector('a.gear');if(gear)gear.remove();
   nav();
 }

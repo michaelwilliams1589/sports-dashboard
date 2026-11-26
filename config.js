@@ -35,6 +35,21 @@ function defaultTeams(){
   ];
 }
 
+
+function detectDevice(){
+  try{
+    const ua=navigator.userAgent||'';
+    const touch=navigator.maxTouchPoints||0;
+    if(/iPhone|iPad|iPod/i.test(ua)||(/Macintosh/i.test(ua)&&touch>1))return 'ios';
+    if(/Android/i.test(ua))return 'android';
+  }catch(_){}
+  return '';
+}
+function hubDevice(){
+  if(typeof HUB!=='undefined'&&(HUB.device==='android'||HUB.device==='ios'))return HUB.device;
+  return detectDevice();
+}
+
 function defaultConfig(){
   return {
     v:1,
@@ -47,7 +62,8 @@ function defaultConfig(){
     modules:{home:true,calendar:true,scores:true,playoffs:true,nfl:true,rankings:true,tech:true,packages:true},
     tabOrder:['home','calendar','scores','ou-football','osu-football','ou-basketball','osu-basketball','thunder','playoffs','nfl','rankings','tech','packages'],
     teams:defaultTeams(),
-    techItems:null
+    techItems:null,
+    device:''
   };
 }
 
@@ -65,7 +81,8 @@ function setupConfig(){
     modules:{home:true,calendar:true,scores:true,playoffs:false,nfl:false,rankings:false,tech:true,packages:true},
     tabOrder:['home','calendar','scores','playoffs','nfl','rankings','tech','packages'],
     teams:[],
-    techItems:[]
+    techItems:[],
+    device:detectDevice()
   };
 }
 
@@ -78,6 +95,8 @@ function normalize(raw){
   if(typeof raw.name==='string'&&raw.name.trim())c.name=raw.name.trim().slice(0,40);
   if(typeof raw.tz==='string'&&raw.tz)c.tz=raw.tz;
   if(raw.units==='celsius'||raw.units==='fahrenheit')c.units=raw.units;
+  if(raw.device==='android'||raw.device==='ios')c.device=raw.device;
+  else if(raw.device==='')c.device='';
   if(raw.weather&&typeof raw.weather==='object')c.weather=Object.assign(c.weather,raw.weather);
   if(raw.calendar&&typeof raw.calendar==='object')c.calendar=Object.assign({},c.calendar,raw.calendar);
   if(raw.modules&&typeof raw.modules==='object')c.modules=Object.assign({},c.modules,raw.modules);
@@ -265,3 +284,24 @@ if(typeof location!=='undefined'&&typeof localStorage!=='undefined'){
 }
 
 var HUB=loadConfig();
+
+function applyDeviceClass(){
+  if(typeof document==='undefined'||!document.body)return;
+  const d=hubDevice();
+  document.body.classList.toggle('hub-android',d==='android');
+  document.body.classList.toggle('hub-ios',d==='ios');
+}
+if(typeof window!=='undefined'){
+  window.__hubInstallPrompt=null;
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();
+    window.__hubInstallPrompt=e;
+    window.dispatchEvent(new Event('hub-install-ready'));
+  });
+  window.addEventListener('appinstalled',()=>{window.__hubInstallPrompt=null;window.dispatchEvent(new Event('hub-install-ready'));});
+  if(typeof document!=='undefined'){
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyDeviceClass);
+    else applyDeviceClass();
+  }
+}
+

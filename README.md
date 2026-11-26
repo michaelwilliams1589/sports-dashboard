@@ -37,6 +37,9 @@ On iPhone, Customize inside the installed Home Screen app (or import your settin
 
 Open the gear in the top-right corner, or the **Customize** tab.
 
+At the top of Customize, pick **Android** or **iPhone** (auto-detected when we can) so install steps, calendar shortcuts, and a few mobile tips match your phone. That choice is stored with your settings code.
+
+
 - Your own name, city (search any city or U.S. ZIP), °F/°C, favorite teams, calendar, and links are saved on that device only.
 - Until you save a custom setup, the app uses the original default (Okmulgee weather, OU/OSU/Thunder, and the owner's calendar).
 - Share this clean link with friends so they start from a blank setup and do **not** inherit the default personal calendar: https://michaelwilliams1589.github.io/sports-dashboard/?setup=1

@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Michael's Hub</title><link rel="stylesheet" href="common.css?v=6"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=7"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=7"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=7"><link rel="icon" href="icons/favicon.ico?v=7"><title>Michael's Hub</title><link rel="stylesheet" href="common.css?v=7"></head>
 <body>
 <h1 id="hubTitle">Michael's Hub</h1>
 <div class="sub"><span id="clock">—</span></div>
@@ -10,7 +10,7 @@
 <div id="games"><div class="meta">Loading…</div></div>
 <p class="note" id="scoresNote">Full scores and schedules are on the <a href="scores.html" style="color:#fbbf24">Scores</a> tab.</p>
 </div>
-<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+<script src="config.js?v=7"></script><script src="common.js?v=7"></script><script>
 const WXMAP={0:['Clear','☀️'],1:['Mostly clear','🌤️'],2:['Partly cloudy','⛅'],3:['Overcast','☁️'],45:['Fog','🌫️'],48:['Icy fog','🌫️'],51:['Light drizzle','🌦️'],53:['Drizzle','🌦️'],55:['Heavy drizzle','🌧️'],56:['Freezing drizzle','🌧️'],57:['Freezing drizzle','🌧️'],61:['Light rain','🌧️'],63:['Rain','🌧️'],65:['Heavy rain','🌧️'],66:['Freezing rain','🌧️'],67:['Freezing rain','🌧️'],71:['Light snow','🌨️'],73:['Snow','🌨️'],75:['Heavy snow','❄️'],77:['Snow grains','🌨️'],80:['Rain showers','🌦️'],81:['Rain showers','🌧️'],82:['Heavy showers','🌧️'],85:['Snow showers','🌨️'],86:['Heavy snow showers','❄️'],95:['Thunderstorm','⛈️'],96:['Thunderstorm with hail','⛈️'],99:['Severe thunderstorm','⛈️']};
 const wx=c=>WXMAP[c]||['—','🌡️'];
 const deg=n=>n==null?'—':Math.round(n)+'°';
