@@ -1,26 +1,26 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=5"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=5"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5"><link rel="icon" href="icons/favicon.ico?v=5"><title>Calendar</title><link rel="stylesheet" href="common.css?v=5"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Calendar</title><link rel="stylesheet" href="common.css?v=6"></head>
 <body>
 <h1>📅 Calendar</h1>
 <p class="note">Your events show here only when you're signed in to this Google account in the same browser. They are not stored in this app. Some phones block the embedded calendar; if it looks empty, use the button below.</p>
-<div class="btnrow">
-  <a href="https://calendar.google.com" target="_blank" rel="noopener"><button type="button">Open Google Calendar</button></a>
-  <a href="https://outlook.live.com/calendar/" target="_blank" rel="noopener"><button type="button" style="background:#1e293b;color:#e2e8f0">Open Outlook Calendar</button></a>
-</div>
-<div class="tabs">
-  <button type="button" id="mAgenda" class="on" onclick="setMode('AGENDA')">Agenda</button>
-  <button type="button" id="mWeek" onclick="setMode('WEEK')">Week</button>
-</div>
-<iframe class="cal" id="cal" title="Google Calendar"></iframe>
-<script src="common.js?v=5"></script><script>
-const CAL_SRC='michael.williams1589@gmail.com';
-function calUrl(mode){
-  const p=new URLSearchParams({src:CAL_SRC,ctz:'America/Chicago',mode,showTitle:'0',showPrint:'0',showCalendars:'0',showTz:'0',showTabs:'1',showDate:'1',showNav:'1',wkst:'1'});
-  return 'https://calendar.google.com/calendar/embed?'+p.toString();
+<div id="calBody"></div>
+<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+const src=(HUB.calendar&&HUB.calendar.googleSrc||'').trim();
+const secUrl=(HUB.calendar&&HUB.calendar.secondaryUrl||'').trim();
+const secLabel=(HUB.calendar&&HUB.calendar.secondaryLabel||'').trim()||'Open second calendar';
+let html='<div class="btnrow"><a href="https://calendar.google.com" target="_blank" rel="noopener"><button type="button">Open Google Calendar</button></a>';
+if(secUrl)html+=`<a href="${esc(secUrl)}" target="_blank" rel="noopener"><button type="button" style="background:#1e293b;color:#e2e8f0">${esc(secLabel)}</button></a>`;
+html+='</div>';
+if(!src){
+  html+='<div class="card"><h2>Add your calendar</h2><p class="note">This hub doesn\'t have a Google Calendar yet. Paste your Google email or an embed URL in Customize. Your events are not pre-filled from anyone else\'s account.</p><a href="customize.html"><button type="button">Open Customize</button></a></div>';
+  document.getElementById('calBody').innerHTML=html;
+}else{
+  html+='<div class="tabs"><button type="button" id="mAgenda" class="on" onclick="setMode(\'AGENDA\')">Agenda</button><button type="button" id="mWeek" onclick="setMode(\'WEEK\')">Week</button></div><iframe class="cal" id="cal" title="Google Calendar"></iframe>';
+  document.getElementById('calBody').innerHTML=html;
+  window.setMode=function(mode){
+    document.getElementById('cal').src=calendarEmbedSrc(mode);
+    document.getElementById('mAgenda').className=mode==='AGENDA'?'on':'';
+    document.getElementById('mWeek').className=mode==='WEEK'?'on':'';
+  };
+  setMode('AGENDA');
 }
-function setMode(mode){
-  document.getElementById('cal').src=calUrl(mode);
-  document.getElementById('mAgenda').className=mode==='AGENDA'?'on':'';
-  document.getElementById('mWeek').className=mode==='WEEK'?'on':'';
-}
-setMode('AGENDA');
 </script></body></html>

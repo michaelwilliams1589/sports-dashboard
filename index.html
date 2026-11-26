@@ -1,37 +1,38 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=5"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=5"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5"><link rel="icon" href="icons/favicon.ico?v=5"><title>Michael's Hub</title><link rel="stylesheet" href="common.css?v=5"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Michael's Hub</title><link rel="stylesheet" href="common.css?v=6"></head>
 <body>
-<h1>Michael's Hub</h1>
+<h1 id="hubTitle">Michael's Hub</h1>
 <div class="sub"><span id="clock">—</span></div>
 <div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
 <div id="alerts"></div>
-<div class="card" id="wx"><h2>Okmulgee weather</h2><div class="meta">Loading forecast…</div></div>
+<div class="card" id="wx"><h2>Weather</h2><div class="meta">Loading forecast…</div></div>
+<div id="gamesWrap">
 <h2 style="margin:22px 0 10px">Today's games</h2>
 <div id="games"><div class="meta">Loading…</div></div>
-<p class="note">Full scores and schedules are on the <a href="scores.html" style="color:#fbbf24">Scores</a> tab.</p>
-<script src="common.js?v=5"></script><script>
-const WX='https://api.open-meteo.com/v1/forecast?latitude=35.62&longitude=-95.96&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation,cloud_cover&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=America%2FChicago&forecast_days=7&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch';
-const ALERTS='https://api.weather.gov/alerts/active?point=35.62,-95.96';
-const TEAMS=[
- {p:'ou-football.html',n:'OU Football',u:'football/college-football/teams/201/schedule'},
- {p:'osu-football.html',n:'OSU Football',u:'football/college-football/teams/197/schedule'},
- {p:'thunder.html',n:'OKC Thunder',u:'basketball/nba/teams/25/schedule',sb:'basketball/nba/scoreboard',id:'25'},
- {p:'ou-basketball.html',n:'OU Basketball',u:'basketball/mens-college-basketball/teams/201/schedule?seasontype=2'},
- {p:'osu-basketball.html',n:'OSU Basketball',u:'basketball/mens-college-basketball/teams/197/schedule?seasontype=2'}];
+<p class="note" id="scoresNote">Full scores and schedules are on the <a href="scores.html" style="color:#fbbf24">Scores</a> tab.</p>
+</div>
+<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
 const WXMAP={0:['Clear','☀️'],1:['Mostly clear','🌤️'],2:['Partly cloudy','⛅'],3:['Overcast','☁️'],45:['Fog','🌫️'],48:['Icy fog','🌫️'],51:['Light drizzle','🌦️'],53:['Drizzle','🌦️'],55:['Heavy drizzle','🌧️'],56:['Freezing drizzle','🌧️'],57:['Freezing drizzle','🌧️'],61:['Light rain','🌧️'],63:['Rain','🌧️'],65:['Heavy rain','🌧️'],66:['Freezing rain','🌧️'],67:['Freezing rain','🌧️'],71:['Light snow','🌨️'],73:['Snow','🌨️'],75:['Heavy snow','❄️'],77:['Snow grains','🌨️'],80:['Rain showers','🌦️'],81:['Rain showers','🌧️'],82:['Heavy showers','🌧️'],85:['Snow showers','🌨️'],86:['Heavy snow showers','❄️'],95:['Thunderstorm','⛈️'],96:['Thunderstorm with hail','⛈️'],99:['Severe thunderstorm','⛈️']};
 const wx=c=>WXMAP[c]||['—','🌡️'];
 const deg=n=>n==null?'—':Math.round(n)+'°';
 function hourLabel(t){if(!t||t.length<13)return '';let h=parseInt(t.slice(11,13),10);const ap=h>=12?'PM':'AM';h=h%12||12;return h+' '+ap;}
 function hm12(t){if(!t||t.length<16)return '';let h=parseInt(t.slice(11,13),10);const min=t.slice(14,16);const ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+min+' '+ap;}
-function dayLabel(t){const [y,m,d]=t.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,18)).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric'});}
+function dayLabel(t){const [y,m,d]=t.split('-').map(Number);return new Date(Date.UTC(y,m-1,d,18)).toLocaleDateString('en-US',{timeZone:hubTz(),weekday:'short',month:'short',day:'numeric'});}
+function windLabel(n){if(n==null)return '—';return Math.round(n)+(HUB.units==='celsius'?' km/h':' mph');}
+function precipLabel(n){if(!n)return '';return ' · Precip '+n+(HUB.units==='celsius'?' mm':' in');}
+
+document.getElementById('hubTitle').textContent=HUB.name||"Michael's Hub";
+document.title=HUB.name||"Michael's Hub";
+if(!hubOn('scores'))document.getElementById('scoresNote').style.display='none';
 
 function tick(){const el=document.getElementById('clock');if(el)el.textContent=fmtLong();}
 tick();setInterval(tick,1000);
 
 function renderWx(d){
   const c=d.current||{},[desc,icon]=wx(c.weather_code);
-  const cur=`<div class="wxnow"><div class="temp">${deg(c.temperature_2m)}</div><div><div class="cond">${icon} ${esc(desc)}</div><div class="meta">Feels like ${deg(c.apparent_temperature)} · Wind ${c.wind_speed_10m==null?'—':Math.round(c.wind_speed_10m)+' mph'} · Humidity ${c.relative_humidity_2m==null?'—':Math.round(c.relative_humidity_2m)+'%'}${c.precipitation?` · Precip ${c.precipitation} in`:''}</div><div class="meta">As of ${esc(c.time?hm12(c.time)+' CT':'—')} · Open-Meteo</div></div></div>`;
+  const place=(HUB.weather&&HUB.weather.name)||'Your city';
+  const cur=`<div class="wxnow"><div class="temp">${deg(c.temperature_2m)}</div><div><div class="cond">${icon} ${esc(desc)}</div><div class="meta">Feels like ${deg(c.apparent_temperature)} · Wind ${windLabel(c.wind_speed_10m)} · Humidity ${c.relative_humidity_2m==null?'—':Math.round(c.relative_humidity_2m)+'%'}${precipLabel(c.precipitation)}</div><div class="meta">As of ${esc(c.time?hm12(c.time)+' '+tzAbbr():'—')} · Open-Meteo</div></div></div>`;
   const times=(d.hourly&&d.hourly.time)||[];
-  const nowLocal=new Date().toLocaleString('sv-SE',{timeZone:'America/Chicago'}).slice(0,13).replace(' ','T');
+  const nowLocal=new Date().toLocaleString('sv-SE',{timeZone:hubTz()}).slice(0,13).replace(' ','T');
   let start=times.findIndex(t=>t>=nowLocal);
   if(start<0)start=0;
   const slice=times.slice(start,start+12);
@@ -49,7 +50,7 @@ function renderWx(d){
     const rise=hm12(d.daily.sunrise[i]),set=hm12(d.daily.sunset[i]);
     return `<div class="d"><b>${esc(name)}</b><span>${ic} ${esc(dsc)}</span><span>${deg(d.daily.temperature_2m_max[i])} / ${deg(d.daily.temperature_2m_min[i])}</span><span class="meta">${pop?pop+'% rain':''}${rise?' · ↑'+rise+' ↓'+set:''}</span></div>`;
   }).join('')}</div>`;
-  document.getElementById('wx').innerHTML=`<h2>Okmulgee weather</h2>${cur}${hours}${week}`;
+  document.getElementById('wx').innerHTML=`<h2>${esc(place)} weather</h2>${cur}${hours}${week}`;
 }
 
 function renderAlerts(d){
@@ -74,9 +75,15 @@ function gameCard(e,c,label){
 async function todaysGames(){
   const today=todayCT();
   let live=false;
-  const cards=await Promise.all(TEAMS.map(async t=>{
+  const teams=visibleTeams();
+  if(!teams.length){
+    document.getElementById('gamesWrap').style.display=hubOn('scores')?'':'none';
+    document.getElementById('games').innerHTML='<div class="meta">No favorite teams yet. Add some in <a href="customize.html" style="color:#fbbf24">Customize</a>.</div>';
+    return false;
+  }
+  const cards=await Promise.all(teams.map(async t=>{
     try{
-      const d=await j(t.u);let ev=d.events||[];
+      const d=await j(teamSchedulePath(t));let ev=d.events||[];
       if(t.sb){try{const s=await j(t.sb);for(const e of s.events||[]){if(e.competitions[0].competitors.some(k=>k.team.id==t.id)){const i=ev.findIndex(x=>x.id==e.id);if(i>=0)ev[i]=e;else ev.push(e);}}}catch(_){}}
       const todays=ev.filter(e=>ymdCT(e.date)===today);
       if(!todays.length)return '';
@@ -86,8 +93,8 @@ async function todaysGames(){
         const label=st.state==='in'?'🔴 Live now':st.completed?'Final':'Today';
         return gameCard(e,c,label);
       }).join('');
-      return `<a href="${t.p}" class="card ${todays.some(e=>e.competitions[0].status.type.state==='in')?'live':''}"><h2>${t.n}</h2>${bits}<div class="more">Full schedule →</div></a>`;
-    }catch(err){return `<a href="${t.p}" class="card"><h2>${t.n}</h2><div class="err">Couldn't load (${esc(err.message)})</div></a>`;}
+      return `<a href="${teamHref(t)}" class="card ${todays.some(e=>e.competitions[0].status.type.state==='in')?'live':''}"><h2>${esc(t.name)}</h2>${bits}<div class="more">Full schedule →</div></a>`;
+    }catch(err){return `<a href="${teamHref(t)}" class="card"><h2>${esc(t.name)}</h2><div class="err">Couldn't load (${esc(err.message)})</div></a>`;}
   }));
   const html=cards.filter(Boolean).join('');
   document.getElementById('games').innerHTML=html?`<div class="cards">${html}</div>`:'<div class="meta">No games for your teams today.</div>';
@@ -97,8 +104,10 @@ async function todaysGames(){
 async function load(){
   document.getElementById('upd').textContent='Refreshing…';
   let live=false;
-  const wxP=jany(WX).then(renderWx).catch(e=>{document.getElementById('wx').innerHTML=`<h2>Okmulgee weather</h2><div class="err">Couldn't load the forecast (${esc(e.message)})</div>`;});
-  const alP=jany(ALERTS).then(renderAlerts).catch(e=>{document.getElementById('alerts').innerHTML=`<div class="note">Weather alerts unavailable (${esc(e.message)}).</div>`;});
+  const wurl=weatherApiUrl();
+  const wxP=wurl?jany(wurl).then(renderWx).catch(e=>{document.getElementById('wx').innerHTML=`<h2>Weather</h2><div class="err">Couldn't load the forecast (${esc(e.message)})</div>`;}):Promise.resolve(document.getElementById('wx').innerHTML=`<h2>Weather</h2><div class="meta">Pick a city in <a href="customize.html" style="color:#fbbf24">Customize</a> to see the forecast.</div>`);
+  const aurl=alertsUrl();
+  const alP=aurl?jany(aurl).then(renderAlerts).catch(e=>{document.getElementById('alerts').innerHTML=`<div class="note">Weather alerts unavailable (${esc(e.message)}).</div>`;}):Promise.resolve(document.getElementById('alerts').innerHTML='');
   const gP=todaysGames().then(v=>{live=v;}).catch(e=>{document.getElementById('games').innerHTML=`<div class="err">Couldn't load today's games (${esc(e.message)})</div>`;});
   await Promise.all([wxP,alP,gP]);
   document.getElementById('upd').textContent='Last updated '+stamp()+' · weather: Open-Meteo · alerts: NWS · scores: ESPN';

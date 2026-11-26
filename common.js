@@ -1,19 +1,37 @@
 const B='https://site.api.espn.com/apis/site/v2/sports/';
-const PAGES=[['index.html','Home'],['calendar.html','Calendar'],['scores.html','Scores'],['ou-football.html','OU 🏈'],['osu-football.html','OSU 🏈'],['ou-basketball.html','OU 🏀'],['osu-basketball.html','OSU 🏀'],['thunder.html','Thunder'],['playoffs.html','Playoffs'],['nfl.html','NFL'],['rankings.html','Rankings'],['tech.html','Tech'],['packages.html','Packages']];
-const fmt=s=>new Date(s).toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+' CT';
-const fmtD=s=>new Date(s).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric'});
-const fmtT=s=>new Date(s).toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})+' CT';
+function hubTz(){return (typeof HUB!=='undefined'&&HUB.tz)||'America/Chicago';}
+function tzAbbr(){try{const p=new Intl.DateTimeFormat('en-US',{timeZone:hubTz(),timeZoneName:'short'}).formatToParts(new Date());return (p.find(x=>x.type==='timeZoneName')||{}).value||'';}catch(_){return '';}}
+const fmt=s=>new Date(s).toLocaleString('en-US',{timeZone:hubTz(),weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})+(tzAbbr()?' '+tzAbbr():'');
+const fmtD=s=>new Date(s).toLocaleDateString('en-US',{timeZone:hubTz(),weekday:'short',month:'short',day:'numeric'});
+const fmtT=s=>new Date(s).toLocaleTimeString('en-US',{timeZone:hubTz(),hour:'numeric',minute:'2-digit'})+(tzAbbr()?' '+tzAbbr():'');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sc=c=>c.score==null?'':(typeof c.score=='object'?c.score.displayValue:c.score);
 const tv=c=>[...new Set((c.broadcasts||[]).map(b=>b.media?.shortName||(b.names||[])[0]).filter(Boolean))].join(', ');
 async function jany(u){let r;try{r=await fetch(u,{cache:'no-store'});}catch(e){throw Error(navigator.onLine===false?"You're offline. Reconnect to see live data":"Can't reach the data source right now. Will retry");}if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-const ymdCT=s=>new Date(s).toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
-const todayCT=()=>new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
-const fmtLong=()=>new Date().toLocaleString('en-US',{timeZone:'America/Chicago',weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+' CT';
+const ymdCT=s=>new Date(s).toLocaleDateString('en-CA',{timeZone:hubTz()});
+const todayCT=()=>new Date().toLocaleDateString('en-CA',{timeZone:hubTz()});
+const fmtLong=()=>new Date().toLocaleString('en-US',{timeZone:hubTz(),weekday:'long',month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit'})+(tzAbbr()?' '+tzAbbr():'');
 async function j(u){let r;try{r=await fetch(B+u,{cache:'no-store'});}catch(e){throw Error(navigator.onLine===false?"You're offline. Reconnect to see live scores":"Can't reach ESPN right now. Will retry");}if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-function nav(){const cur=location.pathname.split('/').pop()||'index.html';const n=document.createElement('nav');
- n.innerHTML=PAGES.map(([h,t])=>`<a href="${h}" class="${h==cur?'on':''}">${t}</a>`).join('');document.body.appendChild(n);}
-function stamp(){return new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',second:'2-digit'})+' CT';}
+function nav(){
+ const cur=location.pathname.split('/').pop()||'index.html';
+ const pages=(typeof navPages==='function'?navPages():[['index.html','Home'],['customize.html','Customize']]);
+ const n=document.createElement('nav');
+ n.innerHTML=pages.map(([h,t])=>`<a href="${h}" class="${navOn(h,cur)?'on':''}">${t}</a>`).join('');
+ document.body.appendChild(n);
+ if(!document.querySelector('a.gear')){
+  const g=document.createElement('a');g.href='customize.html';g.className='gear';g.title='Customize';g.setAttribute('aria-label','Customize');g.textContent='⚙';
+  document.body.appendChild(g);
+ }
+}
+function navOn(href,cur){
+ if(href===cur)return true;
+ if((cur===''||cur==='index.html')&&href==='index.html')return true;
+ if(cur==='team.html'&&href.startsWith('team.html')){
+  try{return new URL(href,location.href).search===location.search;}catch(_){return href===cur+location.search;}
+ }
+ return false;
+}
+function stamp(){return new Date().toLocaleTimeString('en-US',{timeZone:hubTz(),hour:'numeric',minute:'2-digit',second:'2-digit'})+(tzAbbr()?' '+tzAbbr():'');}
 let _timer;function autoRefresh(fn,live){clearTimeout(_timer);const ms=live?30000:60000;const el=document.getElementById('next');if(el)el.textContent=`Auto-refresh every ${ms/1000}s${live?' (games live)':''}`;_timer=setTimeout(fn,ms);}
 document.addEventListener('DOMContentLoaded',nav);
 

@@ -22,4 +22,4 @@ async function load(){document.getElementById('upd').textContent='Refreshing…'
   el.innerHTML=h;
  }catch(err){el.innerHTML=`<div class=err>Couldn't load schedule (${esc(err.message)})</div>`;}
  document.getElementById('upd').textContent='Last updated '+stamp()+' · source: ESPN';autoRefresh(load,live);}
-load();
+if(typeof CFG!=='undefined')load();

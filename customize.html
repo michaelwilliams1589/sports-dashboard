@@ -1,0 +1,342 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Customize</title><link rel="stylesheet" href="common.css?v=6"></head>
+<body>
+<h1>⚙ Customize</h1>
+<p class="note" id="intro">Your choices are saved on this phone only. They are not uploaded anywhere. Michael's original setup is the default until you save your own.</p>
+<div id="welcome"></div>
+<div class="section">
+  <h2>Hub name</h2>
+  <label class="fld"><span>Title on the Home tab</span><input id="hubName" type="text" maxlength="40" autocomplete="off"></label>
+</div>
+<div class="section">
+  <h2>Tabs</h2>
+  <p class="note">Turn modules on or off and reorder them. Hidden tabs also disappear from Home. Home and Customize always stay available.</p>
+  <div id="mods"></div>
+</div>
+<div class="section">
+  <h2>Weather city</h2>
+  <div class="btnrow">
+    <button type="button" id="uF" onclick="setUnits('fahrenheit')">°F</button>
+    <button type="button" id="uC" class="ghost" onclick="setUnits('celsius')">°C</button>
+  </div>
+  <div class="meta" id="cityNow" style="margin-bottom:8px"></div>
+  <label class="fld"><span>Search a city or U.S. ZIP code</span><input id="cityQ" type="search" placeholder="Okmulgee, Tulsa, or 74447" autocomplete="off"></label>
+  <div id="cityResults" class="results"></div>
+</div>
+<div class="section">
+  <h2>Sports &amp; favorite teams</h2>
+  <p class="note">Add any NBA, NFL, MLB, NHL, or college team. You don't have to keep the default teams.</p>
+  <div class="btnrow">
+    <select id="league" style="width:auto"></select>
+    <button type="button" onclick="loadLeague()">Show teams</button>
+  </div>
+  <div id="leagueBox"></div>
+  <label class="fld" style="margin-top:12px"><span>Or search for a team</span><input id="teamQ" type="search" placeholder="Lakers, Sooners, Yankees…" autocomplete="off"></label>
+  <div id="teamResults" class="results"></div>
+  <h3>Your teams</h3>
+  <div id="favs"></div>
+</div>
+<div class="section">
+  <h2>Calendar</h2>
+  <p class="note">Paste your Google Calendar email or an embed URL. Events show only when you're signed in to Google — they are not stored in this app. Leave this blank if you don't want a calendar, or turn the Calendar tab off above.</p>
+  <label class="fld"><span>Google Calendar email or embed URL</span><input id="calSrc" type="text" placeholder="you@gmail.com or https://calendar.google.com/calendar/embed?src=…" autocomplete="off"></label>
+  <label class="fld"><span>Optional second calendar button label</span><input id="cal2l" type="text" placeholder="Open Outlook Calendar" autocomplete="off"></label>
+  <label class="fld"><span>Optional second calendar link</span><input id="cal2u" type="url" placeholder="https://outlook.live.com/calendar/" autocomplete="off"></label>
+</div>
+<div class="section">
+  <h2>Tech &amp; quick links</h2>
+  <p class="note">These stay on this phone. Leave the list empty to use the app's built-in starter list (only if you haven't customized it).</p>
+  <div id="links"></div>
+  <div class="btnrow"><button type="button" onclick="addLink()">Add a link</button></div>
+</div>
+<div class="section">
+  <h2>Share with friends</h2>
+  <p class="note">This clean link opens a blank setup. It does not include your city, teams, or calendar, and it does not include the default personal calendar.</p>
+  <div class="btnrow"><button type="button" onclick="copyShare()">Copy share link for friends</button></div>
+  <div class="meta" id="shareOut"></div>
+</div>
+<div class="section">
+  <h2>Backup &amp; reset</h2>
+  <p class="note">On an iPhone, copy this code before you switch phones or after you Add to Home Screen — the installed app can have its own storage. Paste it there and tap Import.</p>
+  <label class="fld"><span>Settings code</span><textarea id="backup" spellcheck="false"></textarea></label>
+  <div class="btnrow">
+    <button type="button" onclick="doExport()">Copy settings code</button>
+    <button type="button" class="ghost" onclick="doImport()">Import</button>
+    <button type="button" class="danger" onclick="doReset()">Reset to defaults</button>
+  </div>
+  <div class="meta" id="backupOut"></div>
+</div>
+<div class="sticky-done">
+  <button type="button" onclick="saveAll(true)">Save</button>
+  <a href="index.html"><button type="button" class="ghost">Done — go to Home</button></a>
+  <span class="ok" id="saved"></span>
+</div>
+<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+let cityTimer, teamTimer, proCache={};
+
+if(new URLSearchParams(location.search).get('welcome')==='1'){
+  document.getElementById('welcome').innerHTML='<div class="banner"><b>Set up your hub.</b> Name it, pick a city, add the teams you care about, and tap Save. Your choices stay on this phone. If you add this app to your iPhone Home Screen, open Customize inside the installed app (or import your settings code) so your setup comes along.</div>';
+  document.getElementById('intro').textContent='Friends start from a blank setup — not someone else\'s teams or calendar.';
+}
+
+function flash(id,msg,ok){const el=document.getElementById(id);el.textContent=msg;el.className=ok===false?'err':'ok';}
+
+function fill(){
+  document.getElementById('hubName').value=HUB.name||'';
+  document.getElementById('calSrc').value=(HUB.calendar&&HUB.calendar.googleSrc)||'';
+  document.getElementById('cal2l').value=(HUB.calendar&&HUB.calendar.secondaryLabel)||'';
+  document.getElementById('cal2u').value=(HUB.calendar&&HUB.calendar.secondaryUrl)||'';
+  setUnits(HUB.units||'fahrenheit',true);
+  cityLabel();
+  renderMods();
+  renderFavs();
+  renderLinks();
+  const sel=document.getElementById('league');
+  sel.innerHTML=Object.entries(LEAGUES).filter(([k])=>k!=='wcbb').map(([k,v])=>`<option value="${k}">${esc(v.label)}</option>`).join('');
+  document.getElementById('backup').value=exportConfig();
+}
+
+function cityLabel(){
+  const w=HUB.weather||{};
+  document.getElementById('cityNow').textContent=w.name?`Current: ${w.name}`:'No city chosen yet — search to add one.';
+}
+function setUnits(u,skip){HUB.units=u;document.getElementById('uF').className=u==='fahrenheit'?'':'ghost';document.getElementById('uC').className=u==='celsius'?'':'ghost';if(!skip)saveAll();}
+
+function currentOrder(){
+  const coreIds=CORE_TABS.map(t=>t.id);
+  const teamKeys=(HUB.teams||[]).map(t=>t.key);
+  let order=(HUB.tabOrder||[]).filter(id=>coreIds.includes(id)||teamKeys.includes(id));
+  for(const id of ['home',...teamKeys,...coreIds]) if(!order.includes(id)) order.push(id);
+  if(!order.includes('home'))order.unshift('home');
+  return order.filter(id=>id!=='customize');
+}
+
+function renderMods(){
+  const order=currentOrder();
+  const teams=Object.fromEntries((HUB.teams||[]).map(t=>[t.key,t]));
+  const core=Object.fromEntries(CORE_TABS.map(t=>[t.id,t]));
+  document.getElementById('mods').innerHTML=order.map((id,i)=>{
+    const tab=core[id], team=teams[id];
+    const label=tab?tab.label:(team?(team.short||team.name):id);
+    const locked=tab&&tab.locked;
+    const on=locked||(team?team.on!==false:hubOn(id));
+    return `<div class="mod" data-id="${esc(id)}"><label class="check"><input type="checkbox" ${on?'checked':''} ${locked?'disabled':''} onchange="toggleMod('${esc(id)}',this.checked)"><b>${esc(label)}</b></label>${team?'<span class="pill">Team</span>':''}<button type="button" class="ghost" ${i===0?'disabled':''} onclick="moveMod('${esc(id)}',-1)">↑</button><button type="button" class="ghost" ${i===order.length-1?'disabled':''} onclick="moveMod('${esc(id)}',1)">↓</button></div>`;
+  }).join('');
+}
+
+function toggleMod(id,on){
+  const team=(HUB.teams||[]).find(t=>t.key===id);
+  if(team)team.on=!!on;
+  else {HUB.modules=HUB.modules||{};if(id!=='home')HUB.modules[id]=!!on;}
+  saveAll();
+}
+function moveMod(id,dir){
+  const order=currentOrder();
+  const i=order.indexOf(id);const j=i+dir;
+  if(i<0||j<0||j>=order.length)return;
+  if(order[j]==='home'||(id==='home'))return;
+  [order[i],order[j]]=[order[j],order[i]];
+  HUB.tabOrder=order;
+  saveAll();
+}
+
+document.getElementById('cityQ').addEventListener('input',()=>{
+  clearTimeout(cityTimer);
+  const q=document.getElementById('cityQ').value.trim();
+  if(q.length<2){document.getElementById('cityResults').innerHTML='';return;}
+  cityTimer=setTimeout(()=>searchCity(q),300);
+});
+async function searchCity(q){
+  const el=document.getElementById('cityResults');
+  el.innerHTML='<div class="meta">Searching…</div>';
+  try{
+    const d=await jany('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=en&format=json');
+    const rows=d.results||[];
+    if(!rows.length){el.innerHTML='<div class="meta">No matches. Try a city name or ZIP.</div>';return;}
+    el.innerHTML=rows.map((r,i)=>{
+      const label=[r.name,r.admin1,r.country_code].filter(Boolean).join(', ');
+      return `<button type="button" onclick="pickCity(${i})">${esc(label)}</button>`;
+    }).join('');
+    searchCity._rows=rows;
+  }catch(e){el.innerHTML=`<div class="err">Couldn't search (${esc(e.message)})</div>`;}
+}
+function pickCity(i){
+  const r=(searchCity._rows||[])[i];if(!r)return;
+  const parts=[r.name,r.admin1,r.country_code].filter(Boolean);
+  HUB.weather={name:parts.join(', '),lat:r.latitude,lon:r.longitude,country:r.country_code||''};
+  if(r.timezone)HUB.tz=r.timezone;
+  document.getElementById('cityQ').value='';
+  document.getElementById('cityResults').innerHTML='';
+  cityLabel();
+  saveAll();
+}
+
+document.getElementById('teamQ').addEventListener('input',()=>{
+  clearTimeout(teamTimer);
+  const q=document.getElementById('teamQ').value.trim();
+  if(q.length<2){document.getElementById('teamResults').innerHTML='';return;}
+  teamTimer=setTimeout(()=>searchTeams(q),350);
+});
+async function searchTeams(q){
+  const el=document.getElementById('teamResults');
+  el.innerHTML='<div class="meta">Searching…</div>';
+  try{
+    const d=await jany('https://site.api.espn.com/apis/common/v3/search?query='+encodeURIComponent(q)+'&limit=15');
+    const rows=(d.items||[]).map(teamFromSearchItem).filter(Boolean);
+    const uniq=[];
+    for(const t of rows) if(!uniq.some(x=>x.key===t.key))uniq.push(t);
+    if(!uniq.length){el.innerHTML='<div class="meta">No supported teams found. Try a team nickname, like Lakers or Sooners.</div>';return;}
+    searchTeams._rows=uniq;
+    el.innerHTML=uniq.map((t,i)=>`<button type="button" onclick="addTeamAt('search',${i})">${esc(t.name)} <span class="pill">${esc((LEAGUES[t.league]||{}).label||t.league)}</span></button>`).join('');
+  }catch(e){el.innerHTML=`<div class="err">Couldn't search teams (${esc(e.message)})</div>`;}
+}
+
+async function loadLeague(){
+  const league=document.getElementById('league').value;
+  const box=document.getElementById('leagueBox');
+  const meta=LEAGUES[league];
+  if(!meta)return;
+  if(league==='cfb'||league==='cbb'||league==='wcbb'){
+    box.innerHTML='<div class="note">College rosters are long — use the search box below (try "Sooners" or "Oklahoma State").</div>';
+    document.getElementById('teamQ').focus();
+    return;
+  }
+  box.innerHTML='<div class="meta">Loading team list…</div>';
+  try{
+    if(!proCache[league]){
+      const d=await j(`${meta.sport}/teams`);
+      const list=((((d.sports||[])[0]||{}).leagues||[])[0]||{}).teams||[];
+      proCache[league]=list.map(x=>x.team).filter(Boolean).sort((a,b)=>(a.displayName||'').localeCompare(b.displayName||''));
+    }
+    const teams=proCache[league];
+    box.innerHTML=`<label class="fld"><span>${esc(meta.label)} teams</span><select id="proPick">${teams.map((t,i)=>`<option value="${i}">${esc(t.displayName||t.name)}</option>`).join('')}</select></label><div class="btnrow"><button type="button" onclick="addPro('${league}')">Add team</button></div>`;
+  }catch(e){box.innerHTML=`<div class="err">Couldn't load that league (${esc(e.message)})</div>`;}
+}
+function addPro(league){
+  const meta=LEAGUES[league], list=proCache[league]||[];
+  const i=Number(document.getElementById('proPick').value);
+  const t=list[i];if(!t)return;
+  addTeam(normalizeTeam({id:String(t.id),sport:meta.sport,league,name:t.displayName||t.name,short:t.abbreviation||t.shortDisplayName||t.name,types:meta.types,typeNames:meta.typeNames,sb:meta.sb,on:true}));
+}
+
+function addTeamAt(src,i){
+  const t=(src==='search'?searchTeams._rows:proCache[src])||[];
+  const team=t[i];if(!team)return;
+  addTeam(team);
+  document.getElementById('teamQ').value='';
+  document.getElementById('teamResults').innerHTML='';
+}
+function addTeam(team){
+  const t=normalizeTeam(team);if(!t)return;
+  HUB.teams=HUB.teams||[];
+  if(HUB.teams.some(x=>x.key===t.key||(x.sport===t.sport&&x.id===t.id))){flash('saved','That team is already on your list',false);return;}
+  HUB.teams.push(t);
+  const order=currentOrder();
+  const existing=order.filter(id=>id!==t.key&&HUB.teams.some(tm=>tm.key===id));
+  let after=existing.length?order.indexOf(existing[existing.length-1]):order.indexOf('scores');
+  if(after<0) after=Math.max(0,order.indexOf('home'));
+  if(!order.includes(t.key)) order.splice(after+1,0,t.key);
+  HUB.tabOrder=order;
+  if(t.league==='nba')HUB.modules.playoffs=true;
+  if(t.league==='nfl')HUB.modules.nfl=true;
+  if(t.league==='cfb')HUB.modules.rankings=true;
+  saveAll();
+}
+function removeTeam(key){
+  HUB.teams=(HUB.teams||[]).filter(t=>t.key!==key);
+  HUB.tabOrder=(HUB.tabOrder||[]).filter(id=>id!==key);
+  saveAll();
+}
+function renderFavs(){
+  const teams=HUB.teams||[];
+  document.getElementById('favs').innerHTML=teams.length?teams.map(t=>`<div class="fav"><b>${esc(t.name)}</b><span class="pill">${esc((LEAGUES[t.league]||{}).label||t.league)}</span><button type="button" class="ghost" onclick="removeTeam('${esc(t.key)}')">Remove</button></div>`).join(''):'<div class="meta">No favorite teams yet.</div>';
+}
+
+function renderLinks(){
+  const items=Array.isArray(HUB.techItems)?HUB.techItems:(HUB.techItems===null?null:[]);
+  const list=items?items.slice():[];
+  if(items===null){
+    document.getElementById('links').innerHTML='<div class="note">Using the built-in starter list. Add a link below to start your own list on this phone.</div>';
+    return;
+  }
+  document.getElementById('links').innerHTML=list.map((it,i)=>`<div class="card" style="margin-bottom:8px">
+    <label class="fld"><span>Name</span><input data-i="${i}" data-k="item" value="${esc(it.item||'')}"></label>
+    <label class="fld"><span>Link</span><input data-i="${i}" data-k="link" value="${esc(it.link||'')}" type="url" placeholder="https://"></label>
+    <label class="fld"><span>Category</span><input data-i="${i}" data-k="category" value="${esc(it.category||'Links')}"></label>
+    <label class="fld"><span>Notes</span><input data-i="${i}" data-k="notes" value="${esc(it.notes||'')}"></label>
+    <button type="button" class="ghost" onclick="removeLink(${i})">Remove</button>
+  </div>`).join('')||'<div class="meta">No custom links yet.</div>';
+  document.getElementById('links').querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change',()=>editLink(Number(inp.dataset.i),inp.dataset.k,inp.value));
+  });
+}
+function ensureLinkList(){
+  if(!Array.isArray(HUB.techItems))HUB.techItems=[];
+  return HUB.techItems;
+}
+function addLink(){ensureLinkList().push({item:'',category:'Links',link:'',notes:'',targetPrice:null});renderLinks();}
+function editLink(i,k,v){const list=ensureLinkList();if(!list[i])return;list[i][k]=v;saveAll(false);}
+function removeLink(i){ensureLinkList().splice(i,1);saveAll();}
+
+function readForm(){
+  HUB.name=(document.getElementById('hubName').value||'My Hub').trim().slice(0,40)||'My Hub';
+  HUB.calendar={
+    googleSrc:document.getElementById('calSrc').value.trim(),
+    secondaryLabel:document.getElementById('cal2l').value.trim(),
+    secondaryUrl:document.getElementById('cal2u').value.trim()
+  };
+}
+
+function saveAll(showDone){
+  readForm();
+  if(HUB.origin==='default')HUB.origin='custom';
+  saveConfig(HUB);
+  document.getElementById('backup').value=exportConfig();
+  cityLabel();
+  renderMods();
+  renderFavs();
+  if(showDone!==false)flash('saved','Saved on this phone');
+  const nav=document.querySelector('nav');if(nav)nav.remove();
+  const gear=document.querySelector('a.gear');if(gear)gear.remove();
+  nav();
+}
+
+function copyText(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);
+  const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');}finally{ta.remove();}
+  return Promise.resolve();
+}
+function copyShare(){
+  copyText(HUB_SHARE).then(()=>flash('shareOut','Copied '+HUB_SHARE,true)).catch(()=>flash('shareOut','Copy failed — select and copy: '+HUB_SHARE,false));
+}
+function doExport(){
+  const code=exportConfig();
+  document.getElementById('backup').value=code;
+  copyText(code).then(()=>flash('backupOut','Settings code copied. Save it somewhere safe.',true)).catch(()=>flash('backupOut','Select the text above and copy it.',false));
+}
+function doImport(){
+  try{
+    importConfig(document.getElementById('backup').value);
+    fill();
+    const n=document.querySelector('nav');if(n)n.remove();
+    const g=document.querySelector('a.gear');if(g)g.remove();
+    nav();
+    flash('backupOut','Imported. Your hub now uses this setup.',true);
+  }catch(e){flash('backupOut',e.message,false);}
+}
+function doReset(){
+  if(!confirm('Reset this phone to the original default hub? Your saved city, teams, and links will be cleared.'))return;
+  resetConfig();
+  fill();
+  const n=document.querySelector('nav');if(n)n.remove();
+  const g=document.querySelector('a.gear');if(g)g.remove();
+  nav();
+  flash('backupOut','Reset to the original defaults.',true);
+}
+
+document.getElementById('hubName').addEventListener('change',()=>saveAll());
+document.getElementById('calSrc').addEventListener('change',()=>saveAll());
+document.getElementById('cal2l').addEventListener('change',()=>saveAll());
+document.getElementById('cal2u').addEventListener('change',()=>saveAll());
+fill();
+</script></body></html>

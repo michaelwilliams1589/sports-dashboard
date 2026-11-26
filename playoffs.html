@@ -1,6 +1,6 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=5"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=5"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5"><link rel="icon" href="icons/favicon.ico?v=5"><title>OKC Thunder Playoffs</title><link rel="stylesheet" href="common.css?v=5"></head>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>OKC Thunder Playoffs</title><link rel="stylesheet" href="common.css?v=6"></head>
 <body>
-<h1>⚡ OKC Thunder Playoffs</h1>
+<h1 id="ph">⚡ NBA Playoffs</h1>
 <div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
 <div id="status" class="status"><div class="meta">Loading standings…</div></div>
 <div id="bracket"></div>
@@ -8,9 +8,18 @@
 <div class="wrap" id="west"></div>
 <h2 style="margin:22px 0 10px">NBA standings</h2>
 <div class="wrap" id="league"></div>
-<p class="note">Standings and series from ESPN. <a href="thunder.html" style="color:#fbbf24">Thunder schedule →</a></p>
-<script src="common.js?v=5"></script><script>
-const OKC='25', STAND='https://site.api.espn.com/apis/v2/sports/basketball/nba/standings';
+<p class="note" id="pfoot">Standings and series from ESPN.</p>
+<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+const STAND='https://site.api.espn.com/apis/v2/sports/basketball/nba/standings';
+const MY=nbaTeam();
+const OKC=MY?String(MY.id):'';
+const MYNAME=MY?(MY.name||'your team'):'';
+if(document.getElementById('ph'))document.getElementById('ph').textContent=MY?'⚡ '+MY.name+' Playoffs':'⚡ NBA Playoffs';
+if(MY)document.title=MY.name+' Playoffs';
+(function(){const el=document.getElementById('pfoot');if(!el)return;
+ el.innerHTML=MY?`Standings and series from ESPN. <a href="${teamHref(MY)}" style="color:#fbbf24">${esc(MY.short||MY.name)} schedule →</a>`:`Standings and series from ESPN. <a href="customize.html" style="color:#fbbf24">Add an NBA team →</a>`;
+})();
+
 const stat=(e,name)=>{for(const s of e.stats||[]) if(s.name===name||s.abbreviation===name||s.name===name) return s; return null;};
 const val=(e,name)=>{const s=stat(e,name);return s?s.displayValue:null;};
 const num=(e,name)=>{const s=stat(e,name);return s&&s.value!=null?Number(s.value):null;};
@@ -50,7 +59,7 @@ function table(rows, opts={}){
 }
 function thunderStatus(west, ph, seasonName){
   const me=west.find(e=>(e.team||{}).id==OKC);
-  if(!me) return `<div class="err">Thunder were not listed in the Western Conference standings.</div>`;
+  if(!me) return MY?`<div class="err">${esc(MYNAME)} were not listed in the Western Conference standings.</div>`:`<div class="meta">Add an NBA team in Customize to track a playoff seed. Here's the Western Conference race.</div>`;
   const seed=num(me,'playoffSeed'), rec=val(me,'overall')||'—', gb=val(me,'gamesBehind')||'—', strk=val(me,'streak')||'—';
   const sixth=west.find(e=>num(e,'playoffSeed')===6);
   const tenth=west.find(e=>num(e,'playoffSeed')===10);
@@ -64,9 +73,9 @@ function thunderStatus(west, ph, seasonName){
     else if(post) line+=` Playoffs start ${fmtDateShort(post.startDate)}. Here's the race.`;
     else line+=` Playoffs start in April. Here's the race.`;
   }else if(ph.name==='playin'){
-    line = seed&&seed<=10?`The play-in is underway. Thunder are the West's #${seed} seed.`:`The play-in is underway. Thunder are outside the field as the West's #${seed||'—'} seed.`;
+    line = seed&&seed<=10?`The play-in is underway. ${esc(MYNAME)} are the West's #${seed} seed.`:`The play-in is underway. ${esc(MYNAME)} are outside the field as the West's #${seed||'—'} seed.`;
   }else if(ph.name==='post'){
-    line = `The playoffs are underway. Thunder are the West's #${seed||'—'} seed.`;
+    line = `The playoffs are underway. ${esc(MYNAME)} are the West's #${seed||'—'} seed.`;
   }else{
     line='The NBA is in the offseason. Standings below are from the last completed season.';
   }

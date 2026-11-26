@@ -1,13 +1,14 @@
 // Michael's Hub service worker. Bump VERSION on every release (also bump ?v=N on assets).
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = 'sports-shell-' + VERSION;
 const SHELL = [
   './', 'index.html', 'scores.html', 'calendar.html', 'playoffs.html', 'tech.html', 'packages.html',
+  'customize.html', 'team.html',
   'ou-football.html', 'osu-football.html', 'ou-basketball.html', 'osu-basketball.html',
   'thunder.html', 'nfl.html', 'rankings.html',
-  'common.css?v=5', 'common.js?v=5', 'schedule.js?v=5', 'manifest.json?v=5', 'tech-watch.json?v=5',
+  'common.css?v=6', 'common.js?v=6', 'config.js?v=6', 'schedule.js?v=6', 'manifest.json?v=6', 'tech-watch.json?v=6',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
-  'icons/apple-touch-icon.png?v=5', 'icons/favicon-32.png?v=5', 'icons/favicon.ico?v=5'
+  'icons/apple-touch-icon.png?v=6', 'icons/favicon-32.png?v=6', 'icons/favicon.ico?v=6'
 ];
 
 self.addEventListener('install', e => {

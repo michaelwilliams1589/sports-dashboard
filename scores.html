@@ -1,16 +1,14 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=5"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=5"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5"><link rel="icon" href="icons/favicon.ico?v=5"><title>Michael's Live Scoreboard</title><link rel="stylesheet" href="common.css?v=5"></head><body>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Michael's Live Scoreboard</title><link rel="stylesheet" href="common.css?v=6"></head><body>
 <h1>🏈🏀 Michael's Live Scoreboard</h1>
 <div class="sub"><span id="upd">Loading…</span><button onclick="load()">Refresh</button><span id="next"></span></div>
 <div class="cards" id="cards"></div>
 <h2 style="margin:22px 0 10px" id="nflh">NFL</h2><div class="grid" id="nfl"></div>
-<script src="common.js?v=5"></script><script>
-const B0='https://site.api.espn.com/apis/site/v2/sports/';
-const TEAMS=[
- {p:'ou-football.html',n:'Oklahoma Sooners Football',u:'football/college-football/teams/201/schedule'},
- {p:'osu-football.html',n:'Oklahoma State Cowboys Football',u:'football/college-football/teams/197/schedule'},
- {p:'thunder.html',n:'OKC Thunder',u:'basketball/nba/teams/25/schedule',sb:'basketball/nba/scoreboard',id:'25'},
- {p:'ou-basketball.html',n:'Oklahoma Sooners Basketball',u:'basketball/mens-college-basketball/teams/201/schedule?seasontype=2',bb:1},
- {p:'osu-basketball.html',n:'Oklahoma State Cowboys Basketball',u:'basketball/mens-college-basketball/teams/197/schedule?seasontype=2',bb:1}];
+<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+function scoreTeams(){
+ return visibleTeams().map(t=>({
+  p:teamHref(t),n:t.name,u:teamSchedulePath(t),sb:t.sb,id:String(t.id),bb:t.league==='cbb'||t.league==='wcbb'?1:0
+ }));
+}
 let anyLive=false;
 function game(e,c,label){const st=c.status.type,live=st.state==='in';if(live)anyLive=true;
  const rows=c.competitors.map(k=>`<div class="row ${k.winner?'win':''}"><span>${esc(k.team.displayName)}${k.homeAway=='home'?' (H)':''}</span><b>${st.state=='pre'?'':esc(sc(k))}</b></div>`).join('');
@@ -38,9 +36,12 @@ async function nfl(){const el=document.getElementById('nfl');
    return `<div class="g ${live?'live':''}"><div class="meta">${fmt(e.date)}${tv(c)?' · '+esc(tv(c)):''}</div>${cs.map(k=>`<div class="row ${k.winner?'win':''}"><span>${k.homeAway=='home'?'@ ':''}${esc(k.team.abbreviation)}</span><b>${st.state=='pre'?'':esc(k.score)}</b></div>`).join('')}<div class="st">${live?'<span class=livetag>LIVE</span> '+esc(st.shortDetail):st.state=='pre'?'Kickoff '+fmt(e.date):esc(st.shortDetail)}</div></div>`}).join('')||'<i>No games</i>';
  }catch(err){el.innerHTML=`<div class="err">Couldn't load NFL (${esc(err.message)})</div>`;}}
 async function load(){anyLive=false;document.getElementById('upd').textContent='Refreshing…';
- const [c]=await Promise.all([Promise.all(TEAMS.map(team)),nfl()]);
- document.getElementById('cards').innerHTML=c.join('');
- document.getElementById('upd').textContent='Last updated '+new Date().toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',second:'2-digit'})+' CT · source: ESPN';
+ const jobs=[Promise.all(scoreTeams().map(team))];
+ if(hubOn('nfl'))jobs.push(nfl());else{const h=document.getElementById('nflh'),n=document.getElementById('nfl');if(h)h.style.display='none';if(n)n.style.display='none';}
+ const [c]=await Promise.all(jobs);
+ if(!scoreTeams().length)document.getElementById('cards').innerHTML='<div class="meta">No favorite teams yet. Add some in <a href="customize.html" style="color:#fbbf24">Customize</a>.</div>';
+ else document.getElementById('cards').innerHTML=c.join('');
+ document.getElementById('upd').textContent='Last updated '+stamp()+' · source: ESPN';
  autoRefresh(load,anyLive);}
 load();
 </script></body></html>

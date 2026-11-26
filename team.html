@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0f172a"><meta name="application-name" content="Michael's Hub"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Hub"><link rel="manifest" href="manifest.json?v=6"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=6"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=6"><link rel="icon" href="icons/favicon.ico?v=6"><title>Team Schedule</title><link rel="stylesheet" href="common.css?v=6"></head>
+<body>
+<h1 id="title">Team</h1><div class="sub"><span id="upd">Loading…</span><button onclick="typeof load==='function'&&load()">Refresh</button><span id="next"></span></div>
+<div id="rec"></div><div class="sched" id="sched" style="margin-top:12px"></div>
+<script src="config.js?v=6"></script><script src="common.js?v=6"></script><script>
+const key=new URLSearchParams(location.search).get('t');
+const team=(HUB.teams||[]).find(t=>t.key===key);
+if(!team){
+  document.getElementById('title').textContent='Team not found';
+  document.getElementById('sched').innerHTML='<div class="err">That team is not in your hub. Add it under Customize.</div>';
+}else{
+  document.getElementById('title').textContent=team.name;
+  document.title=team.name;
+  window.CFG={id:String(team.id),sport:team.sport,types:team.types&&team.types.length?team.types:[2],typeNames:team.typeNames,sb:team.sb};
+}
+</script><script src="schedule.js?v=6"></script></body></html>
